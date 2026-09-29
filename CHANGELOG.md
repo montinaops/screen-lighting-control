@@ -4,6 +4,10 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Expand color range: Settings › Displays › Expand… (or `--expand-range`) relaunches SLC elevated via UAC and sets
+  `GdiICMGammaRange=256`; the Displays page shows when Windows is limiting warmth.
+- HDR displays skip gamma ramps (backlight + overlay only); Windows Night Light conflict notice at startup and in
+  Displays; the UI follows the Windows light/dark theme live.
 - Self-install (`--install` or Settings › Install): copies to `%LOCALAPPDATA%\Programs\SLC`, migrates portable
   settings, Start menu shortcut, Apps & features entry (with quiet uninstall), autostart; no admin needed.
 - Uninstall (`--uninstall [--quiet]`, Apps & features, or Settings): stops the running instance, restores neutral gamma

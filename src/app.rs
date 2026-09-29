@@ -286,6 +286,15 @@ impl App {
             SetTimer(Some(hwnd), TIMER_GAMMA_CHECK, GAMMA_CHECK_MS, None);
             SetTimer(Some(hwnd), TIMER_TICK, TICK_MS, None);
             app.register_hotkeys();
+            if crate::install::night_light_on() {
+                info!("Windows Night Light is on");
+                if let Some(t) = &app.tray {
+                    t.notify(
+                        "Windows Night Light is on",
+                        "It changes screen colors too and will fight with SLC. Turn it off in Settings › System › Display.",
+                    );
+                }
+            }
             if recovered {
                 if let Some(t) = &app.tray {
                     t.notify(
@@ -433,7 +442,8 @@ impl App {
                     s.hw_sent = Some(level);
                 }
             }
-            let want = (kelvin, split.software);
+            // HDR displays ignore or misapply gamma ramps: hardware + overlay only (PRODUCT §13).
+            let want = if s.mon.hdr { (color::NEUTRAL_KELVIN, 1.0) } else { (kelvin, split.software) };
             if s.gamma_sent != Some(want) {
                 if let Some(w) = &self.gamma_worker {
                     w.submit(
@@ -1134,7 +1144,9 @@ impl App {
                 }
             }
             Action::ExpandRange => {
-                info!("settings action not available yet");
+                if !crate::install::run_elevated("--expand-range") {
+                    info!("expand range: elevation declined");
+                }
             }
             Action::Closed => {
                 info!("settings window closed");
@@ -1527,6 +1539,23 @@ impl App {
             WM_TIMER if wp.0 == TIMER_GAMMA_CHECK => {
                 self.check_gamma();
                 Some(LRESULT(0))
+            }
+            WM_SETTINGCHANGE => {
+                // "ImmersiveColorSet": the Windows light/dark theme changed.
+                let name = if lp.0 != 0 {
+                    unsafe { windows::core::PCWSTR(lp.0 as *const u16).to_string().unwrap_or_default() }
+                } else {
+                    String::new()
+                };
+                if name == "ImmersiveColorSet" {
+                    let pal = theme::palette(self.settings.theme);
+                    if let Some(o) = self.osd.as_mut() {
+                        o.set_palette(pal);
+                    }
+                    self.update_flyout();
+                    self.update_settings_window();
+                }
+                None
             }
             WM_TIMECHANGE => {
                 self.update_schedule(true);

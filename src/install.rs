@@ -38,6 +38,44 @@ pub fn gamma_range_expanded() -> bool {
     }
 }
 
+/// Sets `GdiICMGammaRange = 256` (needs administrator rights). Takes effect after signing in again.
+pub fn expand_gamma_range() -> Result<(), String> {
+    unsafe {
+        let mut key = HKEY::default();
+        RegCreateKeyExW(
+            HKEY_LOCAL_MACHINE,
+            w!("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM"),
+            None,
+            None,
+            REG_OPTION_NON_VOLATILE,
+            KEY_SET_VALUE,
+            None,
+            &mut key,
+            None,
+        )
+        .ok()
+        .map_err(|e| format!("cannot open the ICM key (administrator rights needed): {e}"))?;
+        let ok = set_dword(key, "GdiICMGammaRange", 256);
+        let _ = RegCloseKey(key);
+        if ok {
+            info!("GdiICMGammaRange set to 256");
+            Ok(())
+        } else {
+            Err("cannot write GdiICMGammaRange".into())
+        }
+    }
+}
+
+/// Starts `slc.exe <args>` elevated (UAC prompt). Returns false if the user declined.
+pub fn run_elevated(args: &str) -> bool {
+    let exe = win::wide(&config::exe_path().display().to_string());
+    let a = win::wide(args);
+    let r = unsafe {
+        ShellExecuteW(None, w!("runas"), PCWSTR(exe.as_ptr()), PCWSTR(a.as_ptr()), None, SW_SHOWNORMAL)
+    };
+    r.0 as isize > 32
+}
+
 /// Windows Night Light is currently active (it fights with SLC over the gamma ramp).
 /// Night Light stores its state in a CloudStore blob; byte 18 is 0x15 when it is on.
 pub fn night_light_on() -> bool {

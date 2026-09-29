@@ -64,6 +64,28 @@ fn main() {
             println!("SLC: reset {n} monitor(s)");
             0
         }
+        Command::ExpandRange => {
+            console();
+            match install::expand_gamma_range() {
+                Ok(()) => {
+                    println!("SLC: color range expanded; sign out and back in to apply");
+                    if !cli.quiet {
+                        install::ask(
+                            "Done. Windows will allow SLC's full color range after you sign out and back in (or restart).",
+                            false,
+                        );
+                    }
+                    0
+                }
+                Err(e) => {
+                    eprintln!("slc: {e}");
+                    if !cli.quiet {
+                        install::ask(&format!("Could not expand the color range: {e}"), false);
+                    }
+                    1
+                }
+            }
+        }
         Command::Install => {
             console();
             cmd_install()
@@ -79,11 +101,6 @@ fn main() {
         Command::SelfTest => {
             console();
             self_test()
-        }
-        other => {
-            console();
-            eprintln!("slc: {other:?} is not implemented yet");
-            1
         }
     };
     std::process::exit(code);

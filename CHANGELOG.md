@@ -8,6 +8,8 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 - Per-app rules (Settings › Rules): while a given program is in front, turn SLC off (color-critical work), drop only
   the overlay (games with anti-cheat, capture tools), or apply a scene. Add rules by name or from recently used apps.
 - Pause in fullscreen apps (games, videos, presentations), re-checked every 5 s for apps that go fullscreen in place.
+- Dim when idle (Settings › General): after N minutes without input, fade to a set brightness over 2 s and restore on
+  the next input. Skipped while sound is playing or a fullscreen app is in front.
 
 ## [1.0.0] - 2026-09-30
 

@@ -105,6 +105,9 @@ const PAGES: [(Page, &str, &str); 7] = [
 enum Id {
     Nav(usize),
     AutoStart,
+    IdleDim,
+    IdleMinutes,
+    IdleLevel,
     Osd,
     Theme(u8),
     MonEnabled(usize),
@@ -401,6 +404,30 @@ impl SettingsWindow {
             "Show a small popup when a hotkey changes something.",
             s.osd,
         );
+        b.toggle_row(
+            Id::IdleDim,
+            "Dim when idle",
+            "Fade the screens down after a while without keyboard or mouse input. Not while a video or fullscreen app is playing.",
+            s.idle_dim,
+        );
+        if s.idle_dim {
+            b.slider_row(
+                Id::IdleMinutes,
+                "After",
+                "",
+                (s.idle_minutes as f32 - 1.0) / 29.0,
+                format!("{} min", s.idle_minutes),
+                false,
+            );
+            b.slider_row(
+                Id::IdleLevel,
+                "Dim to",
+                "",
+                (s.idle_level - 1.0) / 79.0,
+                format!("{:.0}%", s.idle_level),
+                false,
+            );
+        }
         let sel = match s.theme {
             Theme::System => 0,
             Theme::Light => 1,
@@ -938,6 +965,14 @@ impl SettingsWindow {
                 let v = (f * crate::engine::MAX_HW_SHARE / 5.0).round() * 5.0;
                 self.edit(move |s| s.monitor_mut(&key).hw_share = v);
             }
+            Id::IdleMinutes => {
+                let m = (1.0 + f * 29.0).round() as u32;
+                self.edit(move |s| s.idle_minutes = m);
+            }
+            Id::IdleLevel => {
+                let v = (1.0 + f * 79.0).round();
+                self.edit(move |s| s.idle_level = v);
+            }
             Id::DayK | Id::EveningK | Id::NightK => {
                 let k = frac_kelvin(f);
                 self.edit(move |s| match id {
@@ -988,6 +1023,7 @@ impl SettingsWindow {
         match id {
             Id::Nav(i) => self.set_page(PAGES[i].0),
             Id::AutoStart => self.edit(|s| s.autostart = !s.autostart),
+            Id::IdleDim => self.edit(|s| s.idle_dim = !s.idle_dim),
             Id::Osd => self.edit(|s| s.osd = !s.osd),
             Id::Theme(_) => {
                 let seg = self.segment_at(id, x, 3);
@@ -1106,7 +1142,9 @@ impl SettingsWindow {
             Id::Uninstall => self.send(Action::Uninstall),
             Id::CopyDiag => self.send(Action::CopyDiagnostics),
             Id::OpenFolder => self.send(Action::OpenSettingsFolder),
-            Id::MonShare(_)
+            Id::IdleMinutes
+            | Id::IdleLevel
+            | Id::MonShare(_)
             | Id::DayK
             | Id::EveningK
             | Id::NightK

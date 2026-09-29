@@ -77,6 +77,13 @@ const PREVIEW_MS: u32 = 5000;
 /// Trims the working set once things are idle (after startup, and after closing a window).
 const TIMER_TRIM: usize = 9;
 const TRIM_DELAY_MS: u32 = 3000;
+/// Idle check: slow poll while active, fast steps while fading / waiting for input.
+const TIMER_IDLE: usize = 10;
+const IDLE_POLL_MS: u32 = 5000;
+const IDLE_STEP_MS: u32 = 100;
+const IDLE_WATCH_MS: u32 = 250;
+/// Fade step per IDLE_STEP_MS (2 s from full to dimmed).
+const IDLE_FADE_STEP: f32 = 0.05;
 
 /// Periodic housekeeping (pause expiry, schedule).
 const TIMER_TICK: usize = 5;
@@ -190,6 +197,8 @@ pub struct App {
     fullscreen: bool,
     /// Recently seen foreground apps (for adding rules in Settings).
     recent_apps: Vec<String>,
+    /// Idle dimming progress: 0 = normal, 1 = fully dimmed.
+    idle_fade: f32,
 }
 
 thread_local! {
@@ -279,6 +288,7 @@ impl App {
                 rule: None,
                 fullscreen: false,
                 recent_apps: Vec::new(),
+                idle_fade: 0.0,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -311,6 +321,7 @@ impl App {
             SetTimer(Some(hwnd), TIMER_TRIM, TRIM_DELAY_MS, None);
             app.register_hotkeys();
             app.update_watcher();
+            app.update_idle_timer();
             if crate::install::night_light_on() {
                 info!("Windows Night Light is on");
                 if let Some(t) = &app.tray {
@@ -753,8 +764,60 @@ impl App {
         k_changed || night_changed
     }
 
-    /// Brightness actually shown for a user value (applies the scheduled night ceiling).
+    fn update_idle_timer(&mut self) {
+        unsafe {
+            if self.settings.idle_dim {
+                SetTimer(Some(self.hwnd), TIMER_IDLE, IDLE_POLL_MS, None);
+            } else {
+                let _ = KillTimer(Some(self.hwnd), TIMER_IDLE);
+            }
+        }
+        if !self.settings.idle_dim && self.idle_fade > 0.0 {
+            self.idle_fade = 0.0;
+            self.apply();
+        }
+    }
+
+    fn on_idle_timer(&mut self) {
+        let idle = crate::idle::idle_ms();
+        let threshold = self.settings.idle_minutes as u64 * 60_000;
+        let next = if self.idle_fade > 0.0 && idle < IDLE_WATCH_MS as u64 * 2 {
+            // Input: back to normal at once.
+            info!("input after idle; restoring brightness");
+            self.idle_fade = 0.0;
+            self.apply();
+            IDLE_POLL_MS
+        } else if idle >= threshold
+            && self.paused_until.is_none()
+            && !self.fullscreen
+            && !crate::idle::audio_playing()
+            && !foreground::is_fullscreen(unsafe { GetForegroundWindow() })
+        {
+            if self.idle_fade < 1.0 {
+                if self.idle_fade == 0.0 {
+                    info!("idle for {} s; dimming", idle / 1000);
+                }
+                self.idle_fade = (self.idle_fade + IDLE_FADE_STEP).min(1.0);
+                self.apply();
+                IDLE_STEP_MS
+            } else {
+                IDLE_WATCH_MS
+            }
+        } else if self.idle_fade > 0.0 {
+            IDLE_WATCH_MS
+        } else {
+            IDLE_POLL_MS
+        };
+        unsafe { SetTimer(Some(self.hwnd), TIMER_IDLE, next, None) };
+    }
+
+    /// Brightness actually shown for a user value (applies the scheduled night ceiling and idle dimming).
     fn effective_brightness(&self, b: f32) -> f32 {
+        let b = if self.idle_fade > 0.0 {
+            b.min(crate::idle::ceiling(self.settings.idle_level, self.idle_fade))
+        } else {
+            b
+        };
         match self.settings.schedule.night_brightness {
             Some(nb) if self.settings.schedule.enabled && self.night > 0.0 => {
                 b.min(engine::MAX_BRIGHTNESS + (nb - engine::MAX_BRIGHTNESS) * self.night)
@@ -1141,6 +1204,7 @@ impl App {
         self.rule = None;
         self.fullscreen = false;
         self.update_watcher();
+        self.update_idle_timer();
         self.commit();
     }
 
@@ -1584,6 +1648,10 @@ impl App {
             settings_ui::WM_APP_SETTINGS_ACTION => {
                 let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
                 self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_IDLE => {
+                self.on_idle_timer();
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_TRIM => {

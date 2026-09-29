@@ -203,6 +203,10 @@ pub struct Settings {
     pub rules: Vec<Rule>,
     /// Pause effects while any app is fullscreen (games, videos, presentations).
     pub pause_fullscreen: bool,
+    /// Dim to `idle_level` after `idle_minutes` without input.
+    pub idle_dim: bool,
+    pub idle_minutes: u32,
+    pub idle_level: f32,
 }
 
 impl Default for Settings {
@@ -218,6 +222,9 @@ impl Default for Settings {
             hotkeys: HOTKEY_ACTIONS.iter().map(|(a, b, _)| (a.to_string(), b.to_string())).collect(),
             rules: Vec::new(),
             pause_fullscreen: false,
+            idle_dim: false,
+            idle_minutes: 5,
+            idle_level: 30.0,
         }
     }
 }
@@ -344,6 +351,12 @@ impl Settings {
                 .collect();
         }
         s.pause_fullscreen = ini.get_bool("general", "pause_fullscreen").unwrap_or(false);
+        s.idle_dim = ini.get_bool("general", "idle_dim").unwrap_or(false);
+        s.idle_minutes = ini.get_parse::<u32>("general", "idle_minutes").unwrap_or(5).clamp(1, 60);
+        s.idle_level = ini
+            .get_parse::<f32>("general", "idle_level")
+            .unwrap_or(30.0)
+            .clamp(engine::MIN_BRIGHTNESS, engine::MAX_BRIGHTNESS);
         s.rules = ini
             .keys("rules")
             .into_iter()
@@ -372,6 +385,9 @@ impl Settings {
         );
         ini.set("general", "kelvin", self.kelvin);
         ini.set("general", "pause_fullscreen", self.pause_fullscreen as u8);
+        ini.set("general", "idle_dim", self.idle_dim as u8);
+        ini.set("general", "idle_minutes", self.idle_minutes);
+        ini.set("general", "idle_level", format!("{:.0}", self.idle_level));
         for r in &self.rules {
             ini.set("rules", &r.exe, r.action.to_ini());
         }
@@ -461,6 +477,9 @@ mod tests {
         s.scenes.truncate(2);
         s.hotkeys[0].1 = "Ctrl+Alt+F1".into();
         s.pause_fullscreen = true;
+        s.idle_dim = true;
+        s.idle_minutes = 12;
+        s.idle_level = 20.0;
         s.rules = vec![
             Rule { exe: "photoshop.exe".into(), action: RuleAction::Disable },
             Rule { exe: "game.exe".into(), action: RuleAction::NoOverlay },

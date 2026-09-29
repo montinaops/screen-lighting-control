@@ -299,6 +299,15 @@ slc.exe --pause 60                           (roadmap v1.1)
 - The foreground `WinEvent` hook is installed only while rules exist, fullscreen pausing is on, or Settings is open
   (to list recent apps). SLC's own windows never change the active rule.
 
+## 13b. Dim when idle (v1.1)
+
+- Off by default. After `idle_minutes` (1–30) without keyboard/mouse input, brightness fades over 2 s to at most
+  `idle_level` (a ceiling, like the night brightness), and returns instantly on the next input.
+- Skipped while sound is playing on the default output (videos, music), while a fullscreen app is in front, or while
+  paused. Windows has no public API to read other programs' "keep display on" requests without admin rights, so
+  audio is the proxy.
+- Polls `GetLastInputInfo` every 5 s (every 100–250 ms only while fading/dimmed).
+
 ## 14. Performance budget
 
 | Metric | Budget |

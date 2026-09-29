@@ -11,6 +11,7 @@ mod foreground;
 mod glyph;
 mod hotkeys;
 mod icon;
+mod idle;
 mod install;
 mod log;
 mod model;
@@ -307,6 +308,11 @@ fn self_test() -> i32 {
         tg.kelvin,
         tg.phase,
         off / 60.0
+    );
+    println!(
+        "  idle: {} s since last input; audio playing: {}",
+        idle::idle_ms() / 1000,
+        idle::audio_playing()
     );
     // Pure-logic sanity: neutral white and ramp construction.
     let ok = color::white_point(6500).iter().all(|c| (c - 1.0).abs() < 1e-3)

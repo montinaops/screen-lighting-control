@@ -24,7 +24,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 ## Milestone v1.1 — automation
 - ✅ Per-app rules (off / no overlay / scene while an app is in front) and pause in fullscreen apps — #15
 - ✅ CLI control of the running instance (`--set`, `--scene`, `--pause`, `--resume`, `--settings`, `--exit`) via `WM_COPYDATA` — shipped in v1.0
-- Idle fade (dim after N minutes without input, restore on input)
+- ✅ Idle fade (dim after N minutes without input, restore on input; skipped while audio plays or an app is fullscreen) — #16
 
 ## Milestone v1.2 — comfort
 - Wind-down reminders, 20-20-20 break reminders (toast/OSD)

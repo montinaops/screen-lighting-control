@@ -42,6 +42,11 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Panic hotkey restores full brightness and pauses
 - ✅ `--exit` closes cleanly and restores neutral gamma
 
+## Automation (v1.1)
+- ✅ App rules: Off and No overlay verified with Notepad in front / closed
+- ✅ Idle detection: seconds since last input rise without input; audio detection true while sound plays
+- ⚠️ End-to-end idle fade: not observed live (the owner was using the machine during the test window)
+
 ## Install
 - ✅ `--install`: exe, migrated settings, Start menu shortcut, Apps & features entry, autostart; installed copy runs
 - ✅ `--uninstall --quiet`: stops the app, restores backlight, removes folder, shortcut, entries and autostart

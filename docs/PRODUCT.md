@@ -85,8 +85,8 @@ One brightness value **B** (1–100%) per monitor is split across three stages, 
 - For `B < 100 − H`: hardware = minimum; software factor `S = B / (100 − H)` (1.0 down to ≈0.01).
 - The software factor `S` is applied as gamma scale `g = max(S, gamma_floor)` and overlay opacity
   `α = 1 − S / g` (the overlay removes whatever gamma could not).
-- Brightness steps use a **perceptual curve**: the slider value is perceived lightness, converted to linear
-  light (`L = (B/100)^2.2`) before splitting, so each step looks equally big.
+- All software factors work on **gamma-encoded** values (what the GPU lookup table maps and what DWM blends
+  in). Encoded values are close to perceptually uniform, so equal slider steps look equally big.
 
 ### 4.2 Hardware behavior
 - DDC/CI writes are **slow (50–200 ms) and wear the monitor's settings memory**. So:
@@ -125,8 +125,12 @@ where `g` is the gamma dimming factor from §4.1. A single ramp carries both war
 ### 5.3 Windows range limit and automatic fallback
 Windows rejects gamma ramps that differ "too much" from identity unless the registry value
 `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ICM\GdiICMGammaRange = 256` is set.
-- SLC finds each monitor's **accepted strength** by binary search: it blends the target ramp toward identity until
-  `SetDeviceGammaRamp` succeeds, and caches the result per monitor.
+- Measured on Windows 10 (2 × Lenovo T2254pC): a ramp entry may deviate from identity by at most **~50% of full
+  scale**. So without the registry change, 2700K gets only ~77% of its warmth and 1200K ~50%, and gamma can't dim
+  while warmth uses the whole budget.
+- SLC **learns each monitor's deviation bound**, starting from 0.5. It first tries the full ramp (1 call), then the
+  strongest ramp predicted to fit (1 more call). Only if that fails does it binary-search, blending toward identity
+  (~8 calls), and re-learn the bound. Each `SetDeviceGammaRamp` can block up to one vsync (~16.7 ms).
 - If warmth is being limited, the UI shows a hint: **"Expand color range"**. It runs `slc.exe --expand-range` elevated
   (UAC), sets the registry value, and asks the user to sign out or reboot.
 - Priority: warmth is applied first; dimming that gamma can't do goes to the overlay (§4.1).

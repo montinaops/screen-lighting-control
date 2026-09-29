@@ -5,8 +5,11 @@
 
 mod app;
 mod cli;
+mod color;
+mod engine;
 mod icon;
 mod log;
+mod monitors;
 mod tray;
 mod win;
 
@@ -43,6 +46,16 @@ fn main() {
             console();
             println!("SLC {VERSION}");
             0
+        }
+        Command::Reset => {
+            console();
+            let n = engine::reset_all(&monitors::enumerate());
+            println!("SLC: reset {n} monitor(s)");
+            0
+        }
+        Command::SelfTest => {
+            console();
+            self_test()
         }
         other => {
             console();
@@ -83,4 +96,49 @@ fn run() -> i32 {
     drop(app);
     info!("exit {code}");
     code
+}
+
+/// Non-interactive checks (CI and diagnostics): prints what SLC can see and control.
+fn self_test() -> i32 {
+    let mons = monitors::enumerate();
+    println!("SLC {VERSION} self-test: {} monitor(s)", mons.len());
+    for (i, m) in mons.iter().enumerate() {
+        let ramp = engine::gamma::read(&m.device);
+        println!(
+            "  #{} {} [{}] {}x{} primary={} internal={} hdr={} gamma={}",
+            i + 1,
+            m.name,
+            m.device,
+            m.width(),
+            m.height(),
+            m.primary,
+            m.internal,
+            m.hdr,
+            if ramp.is_some() { "readable" } else { "unavailable" }
+        );
+    }
+    // Gamma probe: apply a strong warm + dim ramp for a moment, report what Windows accepted, restore.
+    for m in &mons {
+        let probes = [(2700, 0.5), (1200, 0.2), (3400, 1.0)];
+        let mut st = engine::gamma::State::default();
+        for (k, scale) in probes {
+            let t0 = std::time::Instant::now();
+            let a = engine::gamma::apply(&m.device, k, scale, &mut st);
+            let ms = t0.elapsed().as_secs_f32() * 1000.0;
+            println!(
+                "  probe {} {k}K x{scale}: scale={:.2} warmth={:.2} limited={} failed={} ({ms:.1} ms, bound {:.3})",
+                m.device, a.scale, a.warmth, a.limited, a.failed, st.bound
+            );
+        }
+        engine::gamma::reset(&m.device);
+    }
+    // Pure-logic sanity: neutral white and ramp construction.
+    let ok = color::white_point(6500).iter().all(|c| (c - 1.0).abs() < 1e-3)
+        && color::build_ramp([1.0; 3], 1.0, 1.0) == color::identity_ramp();
+    println!("  color math: {}", if ok { "ok" } else { "FAILED" });
+    if ok {
+        0
+    } else {
+        1
+    }
 }

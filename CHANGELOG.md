@@ -5,6 +5,9 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Reminders (Settings › General): 20-20-20 eye breaks (a 20-second OSD countdown after 20 minutes of continuous
+  activity; a 5-minute pause counts as a break; skipped in fullscreen apps) and a bedtime reminder N minutes before
+  bedtime. The tray tooltip counts down to bedtime in the last 3 hours (f.lux's "backwards alarm clock").
 - Color filters: Grayscale, Amber night (low blue light without an orange cast) and Red night, alongside Darkroom —
   tray "Color filter" menu, scene effects (editable in Settings › Scenes), `--filter <name>`. All use the crash-safe
   Magnification matrix.

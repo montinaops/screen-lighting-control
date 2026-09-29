@@ -98,6 +98,19 @@ impl Osd {
 
     /// Shows `content` near the bottom of the monitor under the mouse and restarts the fade timer.
     pub fn show(&mut self, content: Content) {
+        self.show_for(content, VISIBLE_MS);
+    }
+
+    /// Updates the text of a visible OSD without moving it or restarting its timer.
+    pub fn update(&mut self, content: Content) {
+        self.content = content;
+        unsafe {
+            let _ = windows::Win32::Graphics::Gdi::InvalidateRect(Some(self.hwnd), None, false);
+        }
+    }
+
+    /// Like `show`, but stays visible for `visible_ms` before fading.
+    pub fn show_for(&mut self, content: Content, visible_ms: u32) {
         self.content = content;
         unsafe {
             let mut pt = POINT::default();
@@ -117,7 +130,7 @@ impl Osd {
             self.alpha = OPACITY;
             let _ = SetLayeredWindowAttributes(self.hwnd, COLORREF(0), self.alpha, LWA_ALPHA);
             let _ = KillTimer(Some(self.hwnd), TIMER_FADE);
-            SetTimer(Some(self.hwnd), TIMER_HIDE, VISIBLE_MS, None);
+            SetTimer(Some(self.hwnd), TIMER_HIDE, visible_ms, None);
             let _ = windows::Win32::Graphics::Gdi::InvalidateRect(Some(self.hwnd), None, false);
             let _ = windows::Win32::Graphics::Gdi::UpdateWindow(self.hwnd);
         }

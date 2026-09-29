@@ -47,6 +47,11 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Idle detection: seconds since last input rise without input; audio detection true while sound plays
 - ⚠️ End-to-end idle fade: not observed live (the owner was using the machine during the test window)
 
+## Comfort (v1.2)
+- ✅ Color filters: all matrices read back system-wide
+- ✅ Bedtime reminder fires inside the window (log: "bedtime reminder (39 min)")
+- ⚠️ Eye break: needs 20 minutes of continuous activity; countdown logic reviewed, not observed live
+
 ## Install
 - ✅ `--install`: exe, migrated settings, Start menu shortcut, Apps & features entry, autostart; installed copy runs
 - ✅ `--uninstall --quiet`: stops the app, restores backlight, removes folder, shortcut, entries and autostart

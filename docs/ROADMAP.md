@@ -27,7 +27,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 - ✅ Idle fade (dim after N minutes without input, restore on input; skipped while audio plays or an app is fullscreen) — #16
 
 ## Milestone v1.2 — comfort
-- Wind-down reminders, 20-20-20 break reminders (toast/OSD)
+- ✅ Bedtime reminder + tooltip countdown, 20-20-20 eye breaks (OSD countdown) — #19
 - ✅ Color filters: Grayscale, Amber night, Red night (plus Darkroom) — #18
 - Software cursor option (so the cursor is dimmed too)
 

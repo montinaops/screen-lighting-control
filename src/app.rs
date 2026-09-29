@@ -79,6 +79,15 @@ const PREVIEW_MS: u32 = 5000;
 /// Trims the working set once things are idle (after startup, and after closing a window).
 const TIMER_TRIM: usize = 9;
 const TRIM_DELAY_MS: u32 = 3000;
+/// Eye break: 20 minutes of activity, 20 seconds of looking away (PRODUCT v1.2).
+const EYE_WORK_MS: u64 = 20 * 60_000;
+const EYE_BREAK_SECONDS: u32 = 20;
+/// A pause in input this long counts as a natural break.
+const NATURAL_BREAK_MS: u64 = 5 * 60_000;
+const TIMER_BREAK: usize = 11;
+/// The tooltip counts down to bedtime in the last hours.
+const BEDTIME_TOOLTIP_MIN: f64 = 180.0;
+
 /// Idle check: slow poll while active, fast steps while fading / waiting for input.
 const TIMER_IDLE: usize = 10;
 const IDLE_POLL_MS: u32 = 5000;
@@ -202,6 +211,12 @@ pub struct App {
     recent_apps: Vec<String>,
     /// Idle dimming progress: 0 = normal, 1 = fully dimmed.
     idle_fade: f32,
+    /// Start of the current stretch of continuous activity (for eye breaks).
+    active_since: u64,
+    /// Seconds left in a running eye break.
+    break_left: Option<u32>,
+    /// When the bedtime reminder last showed (at most once per 12 h).
+    bedtime_shown: u64,
 }
 
 thread_local! {
@@ -238,6 +253,20 @@ fn scene_filter(e: SceneEffect) -> Filter {
         SceneEffect::Amber => Filter::Amber,
         SceneEffect::Red => Filter::Red,
         SceneEffect::None | SceneEffect::Movie => Filter::None,
+    }
+}
+
+fn break_content(seconds: u32) -> osd::Content {
+    osd::Content::Message("Eye break".into(), format!("Look at something ~6 m away · {seconds} s"))
+}
+
+/// "1 h 20 min" / "45 min".
+fn fmt_minutes(m: f64) -> String {
+    let m = m.round() as u32;
+    if m >= 60 {
+        format!("{} h {:02} min", m / 60, m % 60)
+    } else {
+        format!("{m} min")
     }
 }
 
@@ -303,6 +332,9 @@ impl App {
                 fullscreen: false,
                 recent_apps: Vec::new(),
                 idle_fade: 0.0,
+                active_since: now_ms(),
+                break_left: None,
+                bedtime_shown: 0,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -534,6 +566,13 @@ impl App {
         };
         if !self.hotkey_conflicts.is_empty() {
             tip.push_str(&format!("\nHotkey in use: {}", self.hotkey_conflicts.join(", ")));
+        }
+        if self.settings.schedule.enabled {
+            let (_, _, t, _) = schedule::now_local();
+            let mins = schedule::minutes_to_bedtime(&self.settings.schedule, t);
+            if mins <= BEDTIME_TOOLTIP_MIN {
+                tip.push_str(&format!("\nBedtime in {}", fmt_minutes(mins)));
+            }
         }
         let dark = self.filter != Filter::None && !paused;
         if !self.magnifier.set(if paused { None } else { self.filter.matrix() }) && dark {
@@ -954,6 +993,72 @@ impl App {
         }
         if self.update_schedule(false) {
             self.apply();
+        }
+        self.check_reminders();
+    }
+
+    fn check_reminders(&mut self) {
+        let now = now_ms();
+        let idle = crate::idle::idle_ms();
+        if idle >= NATURAL_BREAK_MS {
+            self.active_since = now;
+        }
+        let busy = self.paused_until.is_some()
+            || self.fullscreen
+            || foreground::is_fullscreen(unsafe { GetForegroundWindow() });
+        if self.settings.eye_breaks
+            && self.break_left.is_none()
+            && now.saturating_sub(self.active_since) >= EYE_WORK_MS
+            && !busy
+        {
+            info!("eye break");
+            self.active_since = now;
+            self.break_left = Some(EYE_BREAK_SECONDS);
+            if let Some(o) = self.osd.as_mut() {
+                o.set_palette(theme::palette(self.settings.theme));
+                o.show_for(break_content(EYE_BREAK_SECONDS), (EYE_BREAK_SECONDS + 2) * 1000);
+            }
+            unsafe { SetTimer(Some(self.hwnd), TIMER_BREAK, 1000, None) };
+        }
+        if self.settings.bedtime_reminder && now.saturating_sub(self.bedtime_shown) > 12 * 3_600_000 {
+            let (_, _, t, _) = schedule::now_local();
+            let mins = schedule::minutes_to_bedtime(&self.settings.schedule, t);
+            if mins <= self.settings.bedtime_minutes as f64 {
+                self.bedtime_shown = now;
+                info!("bedtime reminder ({mins:.0} min)");
+                if let Some(o) = self.osd.as_mut() {
+                    o.set_palette(theme::palette(self.settings.theme));
+                    o.show_for(
+                        osd::Content::Message(
+                            format!("Bedtime in {}", fmt_minutes(mins)),
+                            "Time to start winding down".into(),
+                        ),
+                        8000,
+                    );
+                }
+            }
+        }
+    }
+
+    fn on_break_tick(&mut self) {
+        let Some(left) = self.break_left else { return };
+        let left = left.saturating_sub(1);
+        if left == 0 {
+            self.break_left = None;
+            unsafe {
+                let _ = KillTimer(Some(self.hwnd), TIMER_BREAK);
+            }
+            if let Some(o) = self.osd.as_mut() {
+                o.update(osd::Content::Message(
+                    "Break done".into(),
+                    "Back to work — see you in 20 minutes".into(),
+                ));
+            }
+        } else {
+            self.break_left = Some(left);
+            if let Some(o) = self.osd.as_mut() {
+                o.update(break_content(left));
+            }
         }
     }
 
@@ -1683,6 +1788,10 @@ impl App {
             settings_ui::WM_APP_SETTINGS_ACTION => {
                 let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
                 self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_BREAK => {
+                self.on_break_tick();
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_IDLE => {

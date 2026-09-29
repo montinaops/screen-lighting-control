@@ -151,6 +151,11 @@ pub fn now_local() -> (i32, u32, f64, f64) {
     (l.wYear as i32, doy, lm, (off / 15.0).round() * 15.0)
 }
 
+/// Minutes from local time `now` until bedtime (wake − 8 h), in 0..1440.
+pub fn minutes_to_bedtime(s: &Schedule, now: f64) -> f64 {
+    wrap(s.wake as f64 - 8.0 * 60.0 - now)
+}
+
 /// The schedule's target right now.
 pub fn target_now(s: &Schedule) -> Target {
     let (y, doy, t, off) = now_local();
@@ -229,6 +234,15 @@ mod tests {
         // No location → fixed times.
         s.lat = f64::NAN;
         assert_eq!(events(&s, 2026, 172, 0.0).day_start, s.fixed_day as f64);
+    }
+
+    #[test]
+    fn bedtime_countdown() {
+        let s = Schedule { wake: 7 * 60, ..Schedule::default() };
+        assert_eq!(minutes_to_bedtime(&s, 22.0 * 60.0), 60.0);
+        assert_eq!(minutes_to_bedtime(&s, 23.5 * 60.0), 1410.0, "just after bedtime wraps to tomorrow");
+        let late = Schedule { wake: 9 * 60, ..Schedule::default() };
+        assert_eq!(minutes_to_bedtime(&late, 0.5 * 60.0), 30.0, "bedtime after midnight");
     }
 
     #[test]

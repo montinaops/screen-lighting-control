@@ -106,6 +106,9 @@ enum Id {
     Nav(usize),
     AutoStart,
     IdleDim,
+    EyeBreaks,
+    BedtimeReminder,
+    BedtimeMinutes,
     IdleMinutes,
     IdleLevel,
     Osd,
@@ -434,6 +437,30 @@ impl SettingsWindow {
             Theme::Light => 1,
             Theme::Dark => 2,
         };
+        b.heading("Reminders");
+        b.toggle_row(
+            Id::EyeBreaks,
+            "Eye breaks (20-20-20)",
+            "Every 20 minutes of screen time, look at something ~6 m away for 20 seconds. Skipped in fullscreen apps.",
+            s.eye_breaks,
+        );
+        b.toggle_row(
+            Id::BedtimeReminder,
+            "Bedtime reminder",
+            "A reminder before bedtime (8 hours before your wake time, set in Schedule).",
+            s.bedtime_reminder,
+        );
+        if s.bedtime_reminder {
+            b.slider_row(
+                Id::BedtimeMinutes,
+                "Remind me",
+                "",
+                (s.bedtime_minutes as f32 - 10.0) / 170.0,
+                format!("{} min before", s.bedtime_minutes),
+                false,
+            );
+        }
+        b.heading("Appearance");
         b.row(
             "Theme",
             "Colors of the flyout, OSD and this window.",
@@ -979,6 +1006,10 @@ impl SettingsWindow {
                 let v = (f * crate::engine::MAX_HW_SHARE / 5.0).round() * 5.0;
                 self.edit(move |s| s.monitor_mut(&key).hw_share = v);
             }
+            Id::BedtimeMinutes => {
+                let m = ((10.0 + f * 170.0) / 5.0).round() as u32 * 5;
+                self.edit(move |s| s.bedtime_minutes = m);
+            }
             Id::IdleMinutes => {
                 let m = (1.0 + f * 29.0).round() as u32;
                 self.edit(move |s| s.idle_minutes = m);
@@ -1038,6 +1069,8 @@ impl SettingsWindow {
             Id::Nav(i) => self.set_page(PAGES[i].0),
             Id::AutoStart => self.edit(|s| s.autostart = !s.autostart),
             Id::IdleDim => self.edit(|s| s.idle_dim = !s.idle_dim),
+            Id::EyeBreaks => self.edit(|s| s.eye_breaks = !s.eye_breaks),
+            Id::BedtimeReminder => self.edit(|s| s.bedtime_reminder = !s.bedtime_reminder),
             Id::Osd => self.edit(|s| s.osd = !s.osd),
             Id::Theme(_) => {
                 let seg = self.segment_at(id, x, 3);
@@ -1173,7 +1206,8 @@ impl SettingsWindow {
             Id::Uninstall => self.send(Action::Uninstall),
             Id::CopyDiag => self.send(Action::CopyDiagnostics),
             Id::OpenFolder => self.send(Action::OpenSettingsFolder),
-            Id::IdleMinutes
+            Id::BedtimeMinutes
+            | Id::IdleMinutes
             | Id::IdleLevel
             | Id::MonShare(_)
             | Id::DayK

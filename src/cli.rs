@@ -52,9 +52,9 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
             "--log" => {
                 cli.log_file = Some(it.next().ok_or("--log needs a file path")?);
             }
-            "--set" | "--scene" | "--pause" | "--resume" => {
+            "--set" | "--scene" | "--pause" | "--resume" | "--exit" => {
                 forward.push(a_l.clone());
-                if a_l != "--resume" {
+                if a_l != "--resume" && a_l != "--exit" {
                     let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
                     forward.push(v);
                 }
@@ -84,6 +84,8 @@ pub enum Request {
     /// Minutes; 0 = until resumed.
     Pause(u32),
     Resume,
+    /// Close the running instance (restoring the screens).
+    Exit,
 }
 
 /// Parses the forwarded command line (e.g. `--set brightness=40 monitor=2 kelvin=3400`).
@@ -124,6 +126,7 @@ pub fn parse_forward(s: &str) -> Result<Vec<Request>, String> {
                 words.next().ok_or("--pause needs minutes")?.parse().map_err(|_| "bad minutes")?,
             )),
             "--resume" => out.push(Request::Resume),
+            "--exit" => out.push(Request::Exit),
             other => return Err(format!("unexpected: {other}")),
         }
     }
@@ -143,6 +146,7 @@ Usage:
   slc.exe --scene <name>         apply a scene in the running instance
   slc.exe --pause <minutes>      pause the running instance (0 = until resumed)
   slc.exe --resume
+  slc.exe --exit                 close the running instance (restores the screens)
   slc.exe --log <file>           write a diagnostic log
   slc.exe --version
 ";
@@ -184,6 +188,8 @@ mod tests {
         let r = parse_forward("--set brightness=40% monitor=2 kelvin=3400K").unwrap();
         assert_eq!(r, vec![Request::Kelvin(3400), Request::Brightness { value: 40.0, monitor: Some(1) }]);
         assert_eq!(parse_forward("--pause 60").unwrap(), vec![Request::Pause(60)]);
+        assert_eq!(parse_forward("--exit").unwrap(), vec![Request::Exit]);
+        assert_eq!(p(&["--exit"]).unwrap().command, Command::Forward("--exit".into()));
         assert_eq!(parse_forward("--scene Night").unwrap(), vec![Request::Scene("Night".into())]);
         assert!(parse_forward("--set monitor=0 brightness=1").is_err());
         assert!(parse_forward("--set foo=1").is_err());

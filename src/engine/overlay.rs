@@ -50,6 +50,8 @@ unsafe extern "system" fn overlay_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPA
         WM_MOUSEACTIVATE => LRESULT(MA_NOACTIVATE as isize),
         // Keep our exact monitor rectangle; the app repositions us after display changes.
         WM_DPICHANGED => LRESULT(0),
+        // Owned by the app; ignore external close requests.
+        WM_CLOSE => LRESULT(0),
         _ => DefWindowProcW(hwnd, msg, wp, lp),
     }
 }

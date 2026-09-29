@@ -3,10 +3,12 @@
 use crate::color;
 use crate::config::{Ini, Paths};
 use crate::engine::{self, gamma, hardware, overlay::Overlays, Event, Events};
+use crate::hotkeys;
 use crate::info;
-use crate::model::Settings;
+use crate::model::{self, SceneEffect, Settings};
 use crate::monitors::{self, Monitor};
 use crate::tray::{self, MenuItem, Tray};
+use crate::ui::{osd, osd::Osd, theme};
 use crate::win::{self, CONTROLLER_CLASS, WM_APP_ACTIVATE, WM_APP_ENGINE, WM_APP_TRAY};
 use windows::core::w;
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
@@ -23,6 +25,17 @@ const CMD_RESET: u32 = 2;
 const CMD_KELVIN_BASE: u32 = 100;
 /// Brightness presets: CMD_BRIGHTNESS_BASE + index into `BRIGHTNESS_STEPS`.
 const CMD_BRIGHTNESS_BASE: u32 = 200;
+/// Scenes: CMD_SCENE_BASE + index into `settings.scenes`.
+const CMD_SCENE_BASE: u32 = 300;
+const CMD_PAUSE_HOUR: u32 = 3;
+const CMD_PAUSE_FOREVER: u32 = 4;
+const CMD_RESUME: u32 = 5;
+
+/// Hotkey ids: 1 + index into `model::HOTKEY_ACTIONS`; scene hotkeys: HOTKEY_SCENE_BASE + scene index.
+const HOTKEY_SCENE_BASE: i32 = 100;
+const BRIGHTNESS_STEP: f32 = 5.0;
+const KELVIN_STEP: i64 = 250;
+const PANIC_PAUSE_MINUTES: u64 = 60;
 const BRIGHTNESS_STEPS: &[f32] = &[100.0, 80.0, 60.0, 40.0, 25.0, 15.0, 10.0, 5.0, 2.0];
 
 // Timer ids.
@@ -33,6 +46,9 @@ const SAVE_DELAY_MS: u32 = 1000;
 /// Detects other programs (games, drivers, Night Light) overwriting our ramps.
 const TIMER_GAMMA_CHECK: usize = 3;
 const GAMMA_CHECK_MS: u32 = 5000;
+/// Periodic housekeeping (pause expiry, schedule).
+const TIMER_TICK: usize = 5;
+const TICK_MS: u32 = 30_000;
 /// After resume from sleep, monitors need a moment before DDC/CI and gamma stick.
 const TIMER_RESUME: usize = 4;
 const RESUME_DELAY_MS: u32 = 3000;
@@ -108,6 +124,16 @@ pub struct App {
     kelvin: u32,
     settings: Settings,
     paths: Paths,
+    osd: Option<Box<Osd>>,
+    /// Pause end (GetTickCount64 ms); `Some(u64::MAX)` = until resumed.
+    paused_until: Option<u64>,
+    scene_index: usize,
+    /// Hotkeys that could not be registered (shown in the tooltip / settings).
+    hotkey_conflicts: Vec<String>,
+}
+
+fn now_ms() -> u64 {
+    unsafe { windows::Win32::System::SystemInformation::GetTickCount64() }
 }
 
 impl App {
@@ -137,8 +163,12 @@ impl App {
                 hw_worker: None,
                 events: None,
                 kelvin: settings.kelvin,
+                osd: Osd::create(theme::palette(settings.theme)),
                 settings,
                 paths,
+                paused_until: None,
+                scene_index: 0,
+                hotkey_conflicts: Vec::new(),
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -165,6 +195,8 @@ impl App {
             app.refresh_monitors();
             let _ = WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
             SetTimer(Some(hwnd), TIMER_GAMMA_CHECK, GAMMA_CHECK_MS, None);
+            SetTimer(Some(hwnd), TIMER_TICK, TICK_MS, None);
+            app.register_hotkeys();
             if recovered {
                 if let Some(t) = &app.tray {
                     t.notify(
@@ -290,16 +322,18 @@ impl App {
 
     /// Pushes the current state to every monitor: split → hardware / gamma (async) → overlay.
     fn apply(&mut self) {
+        let paused = self.paused_until.is_some();
         for i in 0..self.screens.len() {
             let s = &mut self.screens[i];
             // A disabled monitor gets neutral software effects (hardware is left alone).
-            let (brightness, kelvin) = if s.enabled {
+            let active = s.enabled && !paused;
+            let (brightness, kelvin) = if active {
                 (s.brightness, self.kelvin)
             } else {
                 (engine::MAX_BRIGHTNESS, color::NEUTRAL_KELVIN)
             };
             let white = color::white_point(kelvin);
-            let has_hw = (s.hw.is_some() || s.hw_assumed) && s.enabled;
+            let has_hw = (s.hw.is_some() || s.hw_assumed) && active;
             let split = engine::split(brightness, s.hw_share, has_hw);
             if let (Some(level), Some(w), false) = (split.hardware, &self.hw_worker, s.hw_assumed) {
                 if s.hw_sent.is_none_or(|l| (l - level).abs() > 0.01) {
@@ -400,12 +434,174 @@ impl App {
     /// Stops the workers and removes every software effect (synchronously).
     fn shutdown(&mut self) {
         self.save();
+        let ids: Vec<i32> = (1..=model::HOTKEY_ACTIONS.len() as i32)
+            .chain((0..self.settings.scenes.len() as i32).map(|i| HOTKEY_SCENE_BASE + i))
+            .collect();
+        hotkeys::unregister_all(self.hwnd, ids);
+        self.osd = None;
         self.gamma_worker = None;
         self.hw_worker = None;
         self.overlays.clear();
         let mons: Vec<Monitor> = self.screens.iter().map(|s| s.mon.clone()).collect();
         engine::reset_all(&mons);
         crate::safety::end_session();
+    }
+
+    fn register_hotkeys(&mut self) {
+        let mut entries: Vec<(i32, String, bool)> = model::HOTKEY_ACTIONS
+            .iter()
+            .enumerate()
+            .map(|(i, (action, _, _))| {
+                let repeat = matches!(*action, "brightness_up" | "brightness_down" | "warmer" | "cooler");
+                (i as i32 + 1, self.settings.hotkey(action).to_string(), repeat)
+            })
+            .collect();
+        // The panic hotkey goes first so it wins any conflict with our own bindings.
+        entries.sort_by_key(|(id, _, _)| model::HOTKEY_ACTIONS[*id as usize - 1].0 != "panic");
+        for (i, sc) in self.settings.scenes.iter().enumerate() {
+            entries.push((HOTKEY_SCENE_BASE + i as i32, sc.hotkey.clone(), false));
+        }
+        let failed = hotkeys::register_all(self.hwnd, &entries);
+        self.hotkey_conflicts =
+            failed.iter().filter_map(|id| entries.iter().find(|e| e.0 == *id).map(|e| e.1.clone())).collect();
+        info!("hotkeys registered ({} conflicts)", self.hotkey_conflicts.len());
+    }
+
+    fn on_hotkey(&mut self, id: i32) {
+        if id >= HOTKEY_SCENE_BASE {
+            self.apply_scene((id - HOTKEY_SCENE_BASE) as usize);
+            return;
+        }
+        let Some((action, _, _)) = model::HOTKEY_ACTIONS.get((id - 1) as usize) else { return };
+        match *action {
+            "brightness_up" | "brightness_down" => {
+                let step = if *action == "brightness_up" { BRIGHTNESS_STEP } else { -BRIGHTNESS_STEP };
+                // Snap to the step grid so repeated presses land on round numbers.
+                let target = ((self.master() + step) / BRIGHTNESS_STEP).round() * BRIGHTNESS_STEP;
+                self.resume_if_paused();
+                self.set_master(target);
+                self.commit();
+                self.show_osd(osd::Content::Brightness(self.master()));
+            }
+            "warmer" | "cooler" => {
+                let step = if *action == "warmer" { -KELVIN_STEP } else { KELVIN_STEP };
+                self.resume_if_paused();
+                self.set_kelvin(color::clamp_kelvin(self.kelvin as i64 + step));
+                self.commit();
+                self.show_osd(osd::Content::Warmth(self.kelvin));
+            }
+            "pause" => {
+                if self.paused_until.is_some() {
+                    self.resume();
+                } else {
+                    self.pause(None);
+                }
+            }
+            "panic" => self.panic(),
+            "darkroom" => {
+                if let Some(i) = self.settings.scenes.iter().position(|s| s.effect == SceneEffect::Darkroom) {
+                    self.apply_scene(i);
+                }
+            }
+            "next_scene" | "prev_scene" => {
+                let n = self.settings.scenes.len();
+                if n > 0 {
+                    self.scene_index = if *action == "next_scene" {
+                        (self.scene_index + 1) % n
+                    } else {
+                        (self.scene_index + n - 1) % n
+                    };
+                    self.apply_scene(self.scene_index);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn show_osd(&mut self, content: osd::Content) {
+        if !self.settings.osd {
+            return;
+        }
+        if let Some(o) = self.osd.as_mut() {
+            o.set_palette(theme::palette(self.settings.theme));
+            o.show(content);
+        }
+    }
+
+    fn set_kelvin(&mut self, k: u32) {
+        self.kelvin = k;
+        self.settings.kelvin = k;
+    }
+
+    fn apply_scene(&mut self, index: usize) {
+        let Some(scene) = self.settings.scenes.get(index).cloned() else { return };
+        self.scene_index = index;
+        self.resume_if_paused();
+        if let Some(b) = scene.brightness {
+            self.set_master(b);
+        }
+        if let Some(k) = scene.kelvin {
+            self.set_kelvin(k);
+        }
+        if scene.effect != SceneEffect::None {
+            info!("scene effect {:?} not available yet", scene.effect);
+        }
+        self.commit();
+        let sub = match (scene.brightness, scene.kelvin) {
+            (Some(b), Some(k)) => format!("{b:.0}% · {k}K"),
+            (None, Some(k)) => format!("{k}K"),
+            (Some(b), None) => format!("{b:.0}%"),
+            (None, None) => String::new(),
+        };
+        self.show_osd(osd::Content::Message(scene.name, sub));
+    }
+
+    /// Pauses all effects for `minutes` (None = until resumed).
+    fn pause(&mut self, minutes: Option<u64>) {
+        self.paused_until = Some(minutes.map(|m| now_ms() + m * 60_000).unwrap_or(u64::MAX));
+        info!("paused for {minutes:?} min");
+        self.apply();
+        let sub = match minutes {
+            Some(m) => format!("for {m} minutes"),
+            None => "until resumed".to_string(),
+        };
+        self.show_osd(osd::Content::Message("Paused".into(), sub));
+    }
+
+    fn resume(&mut self) {
+        if self.paused_until.take().is_some() {
+            info!("resumed");
+            self.invalidate();
+            self.apply();
+            self.show_osd(osd::Content::Message("Resumed".into(), String::new()));
+        }
+    }
+
+    fn resume_if_paused(&mut self) {
+        if self.paused_until.take().is_some() {
+            self.invalidate();
+        }
+    }
+
+    /// Full brightness, neutral color, then pause for an hour (PRODUCT §9).
+    fn panic(&mut self) {
+        info!("panic restore");
+        self.paused_until = None;
+        self.set_master(engine::MAX_BRIGHTNESS);
+        self.set_kelvin(color::NEUTRAL_KELVIN);
+        self.invalidate();
+        self.commit();
+        self.paused_until = Some(now_ms() + PANIC_PAUSE_MINUTES * 60_000);
+        self.apply();
+        self.show_osd(osd::Content::Message("Restored".into(), "Full brightness · paused for 1 hour".into()));
+    }
+
+    fn on_tick(&mut self) {
+        if let Some(until) = self.paused_until {
+            if until != u64::MAX && now_ms() >= until {
+                self.resume();
+            }
+        }
     }
 
     fn on_tray(&mut self, event: u32, anchor: POINT) {
@@ -439,11 +635,32 @@ impl App {
                 )
             })
             .collect();
+        let scenes = self
+            .settings
+            .scenes
+            .iter()
+            .enumerate()
+            .map(|(i, sc)| MenuItem::item(CMD_SCENE_BASE + i as u32, &sc.name))
+            .collect();
+        let pause = if self.paused_until.is_some() {
+            MenuItem::item(CMD_RESUME, "Resume")
+        } else {
+            MenuItem::Sub {
+                text: "Pause".into(),
+                items: vec![
+                    MenuItem::item(CMD_PAUSE_HOUR, "For 1 hour"),
+                    MenuItem::item(CMD_PAUSE_FOREVER, "Until resumed"),
+                ],
+            }
+        };
         let items = vec![
             MenuItem::disabled(0, "Screen Lighting Control"),
             MenuItem::Separator,
             MenuItem::Sub { text: "Brightness".into(), items: brightness },
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
+            MenuItem::Sub { text: "Scenes".into(), items: scenes },
+            pause,
+            MenuItem::Separator,
             MenuItem::item(CMD_RESET, "Reset everything"),
             MenuItem::Separator,
             MenuItem::item(CMD_EXIT, "Exit"),
@@ -453,12 +670,19 @@ impl App {
                 let _ = DestroyWindow(self.hwnd);
             },
             CMD_RESET => self.reset(),
+            CMD_PAUSE_HOUR => self.pause(Some(60)),
+            CMD_PAUSE_FOREVER => self.pause(None),
+            CMD_RESUME => self.resume(),
+            c if (CMD_SCENE_BASE..CMD_SCENE_BASE + self.settings.scenes.len() as u32).contains(&c) => {
+                self.apply_scene((c - CMD_SCENE_BASE) as usize)
+            }
             c if (CMD_KELVIN_BASE..CMD_KELVIN_BASE + color::PRESETS.len() as u32).contains(&c) => {
-                self.kelvin = color::PRESETS[(c - CMD_KELVIN_BASE) as usize].0;
-                self.settings.kelvin = self.kelvin;
+                self.resume_if_paused();
+                self.set_kelvin(color::PRESETS[(c - CMD_KELVIN_BASE) as usize].0);
                 self.commit();
             }
             c if (CMD_BRIGHTNESS_BASE..CMD_BRIGHTNESS_BASE + BRIGHTNESS_STEPS.len() as u32).contains(&c) => {
+                self.resume_if_paused();
                 self.set_master(BRIGHTNESS_STEPS[(c - CMD_BRIGHTNESS_BASE) as usize]);
                 self.commit();
             }
@@ -473,11 +697,21 @@ impl App {
         for r in reqs {
             match r {
                 crate::cli::Request::Brightness { value, monitor } => self.set_brightness(monitor, value),
-                crate::cli::Request::Kelvin(k) => {
-                    self.kelvin = color::clamp_kelvin(k as i64);
-                    self.settings.kelvin = self.kelvin;
+                crate::cli::Request::Kelvin(k) => self.set_kelvin(color::clamp_kelvin(k as i64)),
+                crate::cli::Request::Scene(name) => {
+                    match self.settings.scenes.iter().position(|s| s.name.eq_ignore_ascii_case(&name)) {
+                        Some(i) => self.apply_scene(i),
+                        None => return false,
+                    }
                 }
-                other => info!("not supported yet: {other:?}"),
+                crate::cli::Request::Pause(m) => self.pause((m > 0).then_some(m as u64)),
+                crate::cli::Request::Resume => self.resume(),
+                crate::cli::Request::Exit => {
+                    unsafe {
+                        let _ = PostMessageW(Some(self.hwnd), WM_CLOSE, WPARAM(0), LPARAM(0));
+                    }
+                    return true;
+                }
             }
         }
         self.commit();
@@ -486,8 +720,8 @@ impl App {
 
     fn reset(&mut self) {
         info!("reset requested");
-        self.kelvin = color::NEUTRAL_KELVIN;
-        self.settings.kelvin = self.kelvin;
+        self.paused_until = None;
+        self.set_kelvin(color::NEUTRAL_KELVIN);
         self.set_master(engine::MAX_BRIGHTNESS);
         self.invalidate();
         self.commit();
@@ -533,6 +767,14 @@ impl App {
                     let _ = KillTimer(Some(self.hwnd), TIMER_SAVE);
                 }
                 self.save();
+                Some(LRESULT(0))
+            }
+            WM_HOTKEY => {
+                self.on_hotkey(wp.0 as i32);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_TICK => {
+                self.on_tick();
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_GAMMA_CHECK => {

@@ -8,12 +8,14 @@ mod cli;
 mod color;
 mod config;
 mod engine;
+mod hotkeys;
 mod icon;
 mod log;
 mod model;
 mod monitors;
 mod safety;
 mod tray;
+mod ui;
 mod win;
 mod worker;
 
@@ -87,10 +89,16 @@ fn run() -> i32 {
         // Single instance: the mutex lives until the process exits.
         let _mutex = CreateMutexW(None, false, win::INSTANCE_MUTEX);
         if GetLastError() == ERROR_ALREADY_EXISTS {
-            if let Ok(h) = FindWindowW(win::CONTROLLER_CLASS, None) {
-                win::post(h, win::WM_APP_ACTIVATE, 0, 0);
+            // The other instance may still be starting: give its window a moment to appear.
+            for _ in 0..20 {
+                if let Ok(h) = FindWindowW(win::CONTROLLER_CLASS, None) {
+                    win::post(h, win::WM_APP_ACTIVATE, 0, 0);
+                    return 0;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
-            return 0;
+            // A mutex without a window means a hung or dying process: start anyway.
+            info!("instance mutex held but no running window; starting anyway");
         }
     }
     let paths = config::resolve();

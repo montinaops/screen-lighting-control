@@ -4,6 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Global hotkeys (`Win+Alt+…`, rebindable, conflicts reported in the tooltip), with the panic hotkey registered first.
+- On-screen display (Direct2D/DirectWrite) for brightness, warmth, scenes and pause, following the light/dark theme.
+- Pause (1 hour / until resumed), panic restore, scene cycling; tray Scenes and Pause menus; `--scene`, `--pause`,
+  `--resume`, `--exit` for the running instance.
+### Fixed
+- A stale instance mutex (hung process) no longer blocks startup forever.
+- D2D/DWrite factories are never released at process exit (avoids a teardown deadlock).
 - Settings persistence (`slc.ini`, atomic writes, saved 1 s after a change) with portable/installed path resolution;
   per-monitor brightness, hardware share, enable flag and original backlight; schedule, scenes and hotkeys model.
 - Safety net: session flag with crash recovery (neutral gamma + notice), panic hook and unhandled-exception filter.

@@ -10,6 +10,7 @@ use crate::monitors::{self, Monitor};
 use crate::schedule;
 use crate::tray::{self, MenuItem, Tray};
 use crate::ui::flyout::{self, Flyout};
+use crate::ui::settings::{self as settings_ui, SettingsWindow};
 use crate::ui::{osd, osd::Osd, theme};
 use crate::win::{self, CONTROLLER_CLASS, WM_APP_ACTIVATE, WM_APP_ENGINE, WM_APP_TRAY};
 use windows::core::w;
@@ -64,6 +65,9 @@ const DEEP_DIM: f32 = 5.0;
 const DEEP_DIM_SECONDS: u32 = 10;
 /// Posted by the tray wheel hook; wParam = wheel delta (i16).
 const WM_APP_TRAY_WHEEL: u32 = 0x8000 + 11;
+/// Ends a warmth preview from the settings window.
+const TIMER_PREVIEW: usize = 8;
+const PREVIEW_MS: u32 = 5000;
 
 /// Periodic housekeeping (pause expiry, schedule).
 const TIMER_TICK: usize = 5;
@@ -100,6 +104,8 @@ struct Screen {
     gamma_bound: f32,
     /// Fingerprint of the ramp the worker applied (to detect other apps overwriting it).
     gamma_expected: Option<[u16; 6]>,
+    /// Windows limited the last ramp (shown in the Displays page).
+    gamma_limited: bool,
 }
 
 impl Screen {
@@ -124,6 +130,7 @@ impl Screen {
             gamma_scale: 1.0,
             gamma_bound: gamma::DEFAULT_BOUND,
             gamma_expected: None,
+            gamma_limited: false,
         }
     }
 }
@@ -158,6 +165,11 @@ pub struct App {
     deep_dim_left: Option<u32>,
     active_scene: Option<usize>,
     wheel_hook: Option<windows::Win32::UI::WindowsAndMessaging::HHOOK>,
+    settings_win: Option<Box<SettingsWindow>>,
+    /// Temporary warmth shown while scrubbing the schedule timeline or a color slider.
+    preview_k: Option<u32>,
+    /// Global hotkeys are suspended while the settings window captures a new shortcut.
+    capturing: bool,
 }
 
 thread_local! {
@@ -222,6 +234,9 @@ impl App {
                 deep_dim_left: None,
                 active_scene: None,
                 wheel_hook: None,
+                settings_win: None,
+                preview_k: None,
+                capturing: false,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -386,7 +401,7 @@ impl App {
             // A disabled monitor gets neutral software effects (hardware is left alone).
             let active = s.enabled && !paused;
             let (brightness, kelvin) = if active {
-                (ceilings[i], self.kelvin)
+                (ceilings[i], self.preview_k.unwrap_or(self.kelvin))
             } else {
                 (engine::MAX_BRIGHTNESS, color::NEUTRAL_KELVIN)
             };
@@ -432,6 +447,7 @@ impl App {
             t.set_glyph(if paused { crate::icon::Glyph::Paused } else { crate::icon::Glyph::Normal });
         }
         self.update_flyout();
+        self.update_settings_window();
     }
 
     /// Results from the worker threads.
@@ -457,6 +473,7 @@ impl App {
                             reapply = true;
                         }
                     }
+                    s.gamma_limited = applied.limited;
                     if applied.limited || applied.failed {
                         info!(
                             "gamma on {}: warmth {:.2} scale {:.2} failed={}",
@@ -500,10 +517,7 @@ impl App {
     /// Stops the workers and removes every software effect (synchronously).
     fn shutdown(&mut self) {
         self.save();
-        let ids: Vec<i32> = (1..=model::HOTKEY_ACTIONS.len() as i32)
-            .chain((0..self.settings.scenes.len() as i32).map(|i| HOTKEY_SCENE_BASE + i))
-            .collect();
-        hotkeys::unregister_all(self.hwnd, ids);
+        hotkeys::unregister_all(self.hwnd, self.hotkey_ids());
         if let Some(h) = self.wheel_hook.take() {
             unsafe {
                 let _ = UnhookWindowsHookEx(h);
@@ -511,6 +525,7 @@ impl App {
         }
         self.osd = None;
         self.flyout = None;
+        self.settings_win = None;
         self.gamma_worker = None;
         self.hw_worker = None;
         self.overlays.clear();
@@ -842,8 +857,211 @@ impl App {
         }
     }
 
+    fn settings_view(&self) -> settings_ui::View {
+        let range_expanded = crate::install::gamma_range_expanded();
+        settings_ui::View {
+            settings: {
+                let mut s = self.settings.clone();
+                for sc in &self.screens {
+                    let m = s.monitor_mut(&sc.key);
+                    m.brightness = sc.brightness;
+                }
+                s
+            },
+            monitors: self
+                .screens
+                .iter()
+                .map(|s| settings_ui::MonitorInfo {
+                    key: s.key.clone(),
+                    name: s.mon.name.clone(),
+                    method: match s.hw.map(|c| c.kind) {
+                        Some(hardware::Kind::Ddc) => "DDC/CI backlight",
+                        Some(hardware::Kind::Panel) => "Laptop panel",
+                        None => "Software only",
+                    }
+                    .to_string(),
+                    hdr: s.mon.hdr,
+                    gamma_limited: s.gamma_limited && !range_expanded,
+                    brightness: s.brightness,
+                })
+                .collect(),
+            settings_path: self.paths.settings.display().to_string(),
+            portable: self.paths.portable,
+            installed: crate::install::is_installed(),
+            hotkey_conflicts: self.hotkey_conflicts.clone(),
+            range_expanded,
+            night_light_on: crate::install::night_light_on(),
+            current_brightness: self.master(),
+            current_kelvin: self.kelvin,
+        }
+    }
+
+    fn update_settings_window(&mut self) {
+        if self.settings_win.is_some() {
+            let view = self.settings_view();
+            let pal = theme::palette(self.settings.theme);
+            if let Some(w) = self.settings_win.as_mut() {
+                w.update(view, pal);
+            }
+        }
+    }
+
     fn open_settings(&mut self) {
-        info!("settings window requested");
+        if let Some(f) = self.flyout.as_mut() {
+            f.hide();
+        }
+        if let Some(w) = self.settings_win.as_mut() {
+            w.show_page(settings_ui::Page::General);
+            return;
+        }
+        let first_page = if self.settings.schedule.enabled && !self.settings.schedule.has_location() {
+            settings_ui::Page::Schedule
+        } else {
+            settings_ui::Page::General
+        };
+        self.settings_win = SettingsWindow::create(
+            self.hwnd,
+            self.settings_view(),
+            theme::palette(self.settings.theme),
+            first_page,
+        );
+        info!("settings window opened: {}", self.settings_win.is_some());
+    }
+
+    /// Settings were edited in the settings window: apply everything that depends on them.
+    fn settings_changed(
+        &mut self,
+        hotkeys_before: Vec<(String, String)>,
+        scene_keys_before: Vec<String>,
+        autostart_before: bool,
+    ) {
+        for s in &mut self.screens {
+            if let Some(m) = self.settings.monitor(&s.key) {
+                s.hw_share = m.hw_share;
+                s.enabled = m.enabled;
+            }
+        }
+        let scene_keys: Vec<String> = self.settings.scenes.iter().map(|s| s.hotkey.clone()).collect();
+        if !self.capturing && (hotkeys_before != self.settings.hotkeys || scene_keys_before != scene_keys) {
+            self.register_hotkeys();
+        }
+        if autostart_before != self.settings.autostart {
+            crate::install::set_autostart(self.settings.autostart);
+        }
+        self.update_schedule(true);
+        self.commit();
+    }
+
+    fn on_settings_action(&mut self, a: settings_ui::Action) {
+        use settings_ui::Action;
+        match a {
+            Action::Edit(f) => {
+                let hk = self.settings.hotkeys.clone();
+                let sk = self.settings.scenes.iter().map(|s| s.hotkey.clone()).collect();
+                let auto = self.settings.autostart;
+                self.sync_settings();
+                f(&mut self.settings);
+                self.settings_changed(hk, sk, auto);
+            }
+            Action::Preview(k) => {
+                if let Some(k) = k {
+                    self.preview_k = Some(k);
+                    self.apply();
+                }
+                unsafe {
+                    SetTimer(
+                        Some(self.hwnd),
+                        TIMER_PREVIEW,
+                        if k.is_some() { PREVIEW_MS } else { 1500 },
+                        None,
+                    )
+                };
+            }
+            Action::Capturing(on) => {
+                self.capturing = on;
+                if on {
+                    hotkeys::unregister_all(self.hwnd, self.hotkey_ids());
+                } else {
+                    self.register_hotkeys();
+                    self.update_settings_window();
+                }
+            }
+            Action::SaveCurrentAsScene(name) => {
+                let hk = self.settings.hotkeys.clone();
+                let sk = self.settings.scenes.iter().map(|s| s.hotkey.clone()).collect();
+                let auto = self.settings.autostart;
+                self.settings.scenes.push(model::Scene {
+                    name,
+                    brightness: Some(self.master().round()),
+                    kelvin: Some(self.kelvin),
+                    effect: SceneEffect::None,
+                    hotkey: String::new(),
+                });
+                self.settings_changed(hk, sk, auto);
+            }
+            Action::Identify => {
+                let mons: Vec<Monitor> = self.screens.iter().map(|s| s.mon.clone()).collect();
+                crate::ui::identify::show(&mons, theme::palette(self.settings.theme));
+            }
+            Action::CopyDiagnostics => {
+                let text = self.diagnostics();
+                let ok = crate::install::copy_to_clipboard(self.hwnd, &text);
+                self.show_osd(osd::Content::Message(
+                    if ok { "Diagnostics copied" } else { "Could not copy" }.into(),
+                    String::new(),
+                ));
+            }
+            Action::OpenSettingsFolder => {
+                if let Some(dir) = self.paths.settings.parent() {
+                    crate::install::open_folder(dir);
+                }
+            }
+            Action::Install | Action::Uninstall | Action::ExpandRange => {
+                info!("settings action not available yet");
+            }
+            Action::Closed => {
+                info!("settings window closed");
+                self.settings_win = None
+            }
+        }
+    }
+
+    fn hotkey_ids(&self) -> Vec<i32> {
+        (1..=model::HOTKEY_ACTIONS.len() as i32)
+            .chain((0..self.settings.scenes.len() as i32 + 16).map(|i| HOTKEY_SCENE_BASE + i))
+            .collect()
+    }
+
+    fn diagnostics(&self) -> String {
+        let mut out = format!("Screen Lighting Control {}\r\n", crate::VERSION);
+        out.push_str(&format!(
+            "settings: {} (portable={})\r\n",
+            self.paths.settings.display(),
+            self.paths.portable
+        ));
+        out.push_str(&format!(
+            "kelvin={} master={:.0} paused={}\r\n",
+            self.kelvin,
+            self.master(),
+            self.paused_until.is_some()
+        ));
+        for (i, s) in self.screens.iter().enumerate() {
+            out.push_str(&format!(
+                "monitor #{} '{}' {} hw={:?} brightness={:.0} share={:.0} gamma_scale={:.2} limited={} hdr={}\r\n",
+                i + 1,
+                s.mon.name,
+                s.mon.device,
+                s.hw,
+                s.brightness,
+                s.hw_share,
+                s.gamma_scale,
+                s.gamma_limited,
+                s.mon.hdr
+            ));
+        }
+        out.push_str(&format!("hotkey conflicts: {:?}\r\n--- log ---\r\n", self.hotkey_conflicts));
+        out.push_str(&crate::log::snapshot());
+        out
     }
 
     /// Starts the "keep this?" countdown the first time a monitor goes below 5% (PRODUCT §12).
@@ -1051,6 +1269,15 @@ impl App {
                 }
                 crate::cli::Request::Pause(m) => self.pause((m > 0).then_some(m as u64)),
                 crate::cli::Request::Resume => self.resume(),
+                crate::cli::Request::Settings(page) => {
+                    self.open_settings();
+                    if let (Some(p), Some(w)) =
+                        (page.and_then(|p| settings_ui::Page::from_name(&p)), self.settings_win.as_mut())
+                    {
+                        w.show_page(p);
+                    }
+                    return true;
+                }
                 crate::cli::Request::Exit => {
                     unsafe {
                         let _ = PostMessageW(Some(self.hwnd), WM_CLOSE, WPARAM(0), LPARAM(0));
@@ -1111,6 +1338,20 @@ impl App {
                 self.active_scene = None;
                 self.commit();
                 self.show_osd(osd::Content::Brightness(self.master()));
+                Some(LRESULT(0))
+            }
+            settings_ui::WM_APP_SETTINGS_ACTION => {
+                let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
+                self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_PREVIEW => {
+                unsafe {
+                    let _ = KillTimer(Some(self.hwnd), TIMER_PREVIEW);
+                }
+                if self.preview_k.take().is_some() {
+                    self.apply();
+                }
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_DEEP_DIM => {

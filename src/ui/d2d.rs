@@ -86,7 +86,7 @@ pub enum Weight {
 struct Factories {
     d2d: ID2D1Factory,
     dwrite: IDWriteFactory,
-    formats: RefCell<HashMap<(u32, Weight, Align), IDWriteTextFormat>>,
+    formats: RefCell<HashMap<(u32, Weight, Align, bool), IDWriteTextFormat>>,
 }
 
 thread_local! {
@@ -105,7 +105,17 @@ thread_local! {
 }
 
 fn text_format(f: &Factories, size: f32, weight: Weight, align: Align) -> Option<IDWriteTextFormat> {
-    let key = ((size * 10.0) as u32, weight, align);
+    text_format_ex(f, size, weight, align, false)
+}
+
+fn text_format_ex(
+    f: &Factories,
+    size: f32,
+    weight: Weight,
+    align: Align,
+    wrap: bool,
+) -> Option<IDWriteTextFormat> {
+    let key = ((size * 10.0) as u32, weight, align, wrap);
     if let Some(tf) = f.formats.borrow().get(&key) {
         return Some(tf.clone());
     }
@@ -133,8 +143,13 @@ fn text_format(f: &Factories, size: f32, weight: Weight, align: Align) -> Option
             Align::Center => DWRITE_TEXT_ALIGNMENT_CENTER,
             Align::Right => DWRITE_TEXT_ALIGNMENT_TRAILING,
         });
-        let _ = tf.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        let _ = tf.SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        if wrap {
+            let _ = tf.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            let _ = tf.SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+        } else {
+            let _ = tf.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            let _ = tf.SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        }
         let trim =
             DWRITE_TRIMMING { granularity: DWRITE_TRIMMING_GRANULARITY_CHARACTER, ..Default::default() };
         let _ = tf.SetTrimming(&trim, None);
@@ -157,6 +172,26 @@ pub fn measure(text: &str, size: f32, weight: Weight) -> f32 {
                 m.widthIncludingTrailingWhitespace
             } else {
                 0.0
+            }
+        }
+    })
+}
+
+/// Height of `text` wrapped to `width` DIPs.
+pub fn measure_wrapped(text: &str, size: f32, width: f32) -> f32 {
+    FACTORIES.with(|f| {
+        let Some(f) = *f else { return size * 1.4 };
+        let Some(tf) = text_format_ex(f, size, Weight::Regular, Align::Left, true) else { return size * 1.4 };
+        let wide: Vec<u16> = text.encode_utf16().collect();
+        unsafe {
+            let Ok(layout) = f.dwrite.CreateTextLayout(&wide, &tf, width.max(10.0), 10_000.0) else {
+                return size * 1.4;
+            };
+            let mut m = DWRITE_TEXT_METRICS::default();
+            if layout.GetMetrics(&mut m).is_ok() {
+                m.height
+            } else {
+                size * 1.4
             }
         }
     })
@@ -288,6 +323,22 @@ impl Painter<'_> {
 
     pub fn text(&self, s: &str, r: Rect, size: f32, weight: Weight, align: Align, c: Color) {
         let Some(tf) = text_format(self.fac, size, weight, align) else { return };
+        let wide: Vec<u16> = s.encode_utf16().collect();
+        unsafe {
+            self.rt.DrawText(
+                &wide,
+                &tf,
+                &r.d2d(),
+                self.b(c),
+                D2D1_DRAW_TEXT_OPTIONS_CLIP,
+                DWRITE_MEASURING_MODE_NATURAL,
+            )
+        };
+    }
+
+    /// Word-wrapped text, top-aligned in `r`.
+    pub fn text_wrapped(&self, s: &str, r: Rect, size: f32, c: Color) {
+        let Some(tf) = text_format_ex(self.fac, size, Weight::Regular, Align::Left, true) else { return };
         let wide: Vec<u16> = s.encode_utf16().collect();
         unsafe {
             self.rt.DrawText(

@@ -15,7 +15,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 7 | feat: hotkeys + OSD | Global hotkeys, OSD popup | ✅ |
 | 8 | feat: schedule | NOAA solar calculations, embedded cities, schedule curve, transitions, overrides | ✅ |
 | 9 | feat: flyout UI | Direct2D flyout with sliders, per-monitor list, scenes, pause | ✅ |
-| 10 | feat: settings window | Pages: General, Displays, Schedule (timeline), Scenes, Hotkeys, About | ⬜ |
+| 10 | feat: settings window | Pages: General, Displays, Schedule (timeline), Scenes, Hotkeys, About | ✅ |
 | 11 | feat: scenes, darkroom, movie | Scenes, Magnification-based Darkroom, Movie mode | ⬜ |
 | 12 | feat: install / uninstall | Self-install, Start menu, Run key, uninstall entry | ⬜ |
 | 13 | feat: system integration | Night Light / HDR detection, "Expand color range" elevation | ⬜ |

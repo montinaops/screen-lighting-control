@@ -4,6 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Settings window (Direct2D, dark title bar, DPI-aware, scrollable) with six pages: General (autostart, OSD, theme),
+  Displays (per-display enable, backlight share, method/HDR/limit info, Night Light warning, Identify), Schedule
+  (offline city search, sun/fixed timing, wake time, day/evening/night colors, transitions, night brightness,
+  24-hour timeline with drag-to-preview), Scenes (save current, edit name/brightness/warmth/hotkey, delete), Hotkeys
+  (click-to-capture, conflicts, restore defaults), About (diagnostics to clipboard, open settings folder).
+- Live warmth preview while dragging color sliders or the timeline; autostart via the per-user Run key;
+  `--settings [page]` opens the window in the running instance; opens on the Schedule page when no location is set.
 - Tray flyout (Direct2D): master brightness, warmth with a Kelvin gradient track, schedule status with "Return to
   schedule", per-monitor sliders showing the method used, scene chips, Pause/Resume and Settings; mouse wheel on any
   slider; closes on Esc or when it loses focus; follows light/dark theme and DPI.

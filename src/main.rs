@@ -11,6 +11,7 @@ mod config;
 mod engine;
 mod hotkeys;
 mod icon;
+mod install;
 mod log;
 mod model;
 mod monitors;

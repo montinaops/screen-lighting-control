@@ -16,6 +16,7 @@ static STATE_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Restores neutral gamma on every monitor. Safe to call from crash handlers.
 pub fn emergency_reset() {
+    engine::cursor::restore();
     let n = engine::reset_all(&monitors::enumerate());
     info!("emergency reset: {n} monitor(s)");
 }

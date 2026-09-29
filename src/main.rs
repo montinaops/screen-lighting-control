@@ -61,6 +61,7 @@ fn main() {
         Command::Reset => {
             console();
             let n = engine::reset_all(&monitors::enumerate());
+            engine::cursor::restore();
             println!("SLC: reset {n} monitor(s)");
             0
         }
@@ -314,6 +315,9 @@ fn self_test() -> i32 {
         idle::idle_ms() / 1000,
         idle::audio_playing()
     );
+    if let Some((b, n, color)) = engine::cursor::arrow_brightness() {
+        println!("  arrow cursor: avg {b:.0}/255 over {n} px (color={color})");
+    }
     // Pure-logic sanity: neutral white and ramp construction.
     let ok = color::white_point(6500).iter().all(|c| (c - 1.0).abs() < 1e-3)
         && color::build_ramp([1.0; 3], 1.0, 1.0) == color::identity_ramp();

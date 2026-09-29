@@ -26,10 +26,10 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 - ✅ CLI control of the running instance (`--set`, `--scene`, `--pause`, `--resume`, `--settings`, `--exit`) via `WM_COPYDATA` — shipped in v1.0
 - ✅ Idle fade (dim after N minutes without input, restore on input; skipped while audio plays or an app is fullscreen) — #16
 
-## Milestone v1.2 — comfort
+## Milestone v1.2 — comfort ✅ (released 1.2.0)
 - ✅ Bedtime reminder + tooltip countdown, 20-20-20 eye breaks (OSD countdown) — #19
 - ✅ Color filters: Grayscale, Amber night, Red night (plus Darkroom) — #18
-- Software cursor option (so the cursor is dimmed too)
+- ✅ Dimmed mouse pointer (darkened copies of the system cursors while the overlay dims) — #20
 
 ## Milestone v1.3 — integrations
 - Philips Hue (local bridge API) and Home Assistant following the schedule

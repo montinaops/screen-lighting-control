@@ -4,7 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-30
+
+Milestone v1.2: comfort.
+
 ### Added
+- Dim the mouse pointer too (Settings › Displays): while the overlay dims a screen, the system pointers are replaced by
+  copies darkened by the same amount (in 10% steps); restored on exit, `--reset` and crash recovery.
 - Reminders (Settings › General): 20-20-20 eye breaks (a 20-second OSD countdown after 20 minutes of continuous
   activity; a 5-minute pause counts as a break; skipped in fullscreen apps) and a bedtime reminder N minutes before
   bedtime. The tray tooltip counts down to bedtime in the last 3 hours (f.lux's "backwards alarm clock").

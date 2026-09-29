@@ -217,6 +217,7 @@ pub struct App {
     break_left: Option<u32>,
     /// When the bedtime reminder last showed (at most once per 12 h).
     bedtime_shown: u64,
+    cursor: engine::cursor::CursorDimmer,
 }
 
 thread_local! {
@@ -335,6 +336,7 @@ impl App {
                 active_since: now_ms(),
                 break_left: None,
                 bedtime_shown: 0,
+                cursor: Default::default(),
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -516,6 +518,7 @@ impl App {
         let scene_k = rule_scene.as_ref().and_then(|s| s.kelvin);
         let ceilings: Vec<f32> =
             self.screens.iter().map(|s| self.effective_brightness(scene_b.unwrap_or(s.brightness))).collect();
+        let mut max_alpha: f32 = 0.0;
         for i in 0..self.screens.len() {
             let s = &mut self.screens[i];
             // A disabled monitor gets neutral software effects (hardware is left alone).
@@ -553,6 +556,7 @@ impl App {
                 s.gamma_sent = Some(want);
             }
             let alpha = if no_overlay { 0.0 } else { engine::overlay_alpha(split.software, s.gamma_scale) };
+            max_alpha = max_alpha.max(alpha);
             self.overlays.set(i, s.mon.rect, alpha);
         }
         let mut tip = if let Some((exe, action)) = &self.rule {
@@ -574,6 +578,8 @@ impl App {
                 tip.push_str(&format!("\nBedtime in {}", fmt_minutes(mins)));
             }
         }
+        // The cursor sits above the overlay: darken it by the same amount when asked to.
+        self.cursor.set((self.settings.dim_cursor && max_alpha > 0.0).then_some(1.0 - max_alpha));
         let dark = self.filter != Filter::None && !paused;
         if !self.magnifier.set(if paused { None } else { self.filter.matrix() }) && dark {
             let name = self.filter.name();
@@ -671,6 +677,7 @@ impl App {
             }
         }
         self.magnifier.set(None);
+        self.cursor.set(None);
         self.osd = None;
         self.flyout = None;
         self.settings_win = None;

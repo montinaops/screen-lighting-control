@@ -1,6 +1,7 @@
 //! The hybrid brightness pipeline (PRODUCT.md §4): one brightness value per monitor is split
 //! into a hardware level, a gamma scale and an overlay opacity.
 
+pub mod cursor;
 pub mod gamma;
 pub mod hardware;
 pub mod magnify;

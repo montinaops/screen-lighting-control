@@ -50,6 +50,7 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 ## Comfort (v1.2)
 - ✅ Color filters: all matrices read back system-wide
 - ✅ Bedtime reminder fires inside the window (log: "bedtime reminder (39 min)")
+- ✅ Dimmed pointer: arrow average 137 → 55 at 20% brightness, back to 137 at 100%; after a hard kill `--reset` restores it
 - ⚠️ Eye break: needs 20 minutes of continuous activity; countdown logic reviewed, not observed live
 
 ## Install

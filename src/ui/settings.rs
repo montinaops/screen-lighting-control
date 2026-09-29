@@ -116,6 +116,7 @@ enum Id {
     MonEnabled(usize),
     MonShare(usize),
     Identify,
+    DimCursor,
     ExpandRange,
     SchedEnabled,
     SchedMode(u8),
@@ -514,6 +515,13 @@ impl SettingsWindow {
                 );
             }
         }
+        b.heading("Pointer");
+        b.toggle_row(
+            Id::DimCursor,
+            "Dim the mouse pointer too",
+            "The pointer is drawn above SLC's overlay, so it stays bright at deep dimming. This swaps in darkened copies of your pointers (restored when SLC exits).",
+            self.view.settings.dim_cursor,
+        );
         b.heading("Tools");
         b.row(
             "Identify displays",
@@ -1084,6 +1092,7 @@ impl SettingsWindow {
                 });
             }
             Id::Identify => self.send(Action::Identify),
+            Id::DimCursor => self.edit(|s| s.dim_cursor = !s.dim_cursor),
             Id::ExpandRange => self.send(Action::ExpandRange),
             Id::SchedEnabled => self.edit(|s| s.schedule.enabled = !s.schedule.enabled),
             Id::SchedMode(_) => {

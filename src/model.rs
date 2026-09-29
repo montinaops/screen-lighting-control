@@ -215,6 +215,8 @@ pub struct Settings {
     /// One-time reminder this many minutes before bedtime (wake − 8 h).
     pub bedtime_reminder: bool,
     pub bedtime_minutes: u32,
+    /// Replace the system cursors with dimmed copies while the overlay dims the screen.
+    pub dim_cursor: bool,
 }
 
 impl Default for Settings {
@@ -236,6 +238,7 @@ impl Default for Settings {
             eye_breaks: false,
             bedtime_reminder: false,
             bedtime_minutes: 60,
+            dim_cursor: false,
         }
     }
 }
@@ -367,6 +370,7 @@ impl Settings {
         s.pause_fullscreen = ini.get_bool("general", "pause_fullscreen").unwrap_or(false);
         s.idle_dim = ini.get_bool("general", "idle_dim").unwrap_or(false);
         s.eye_breaks = ini.get_bool("general", "eye_breaks").unwrap_or(false);
+        s.dim_cursor = ini.get_bool("general", "dim_cursor").unwrap_or(false);
         s.bedtime_reminder = ini.get_bool("general", "bedtime_reminder").unwrap_or(false);
         s.bedtime_minutes = ini.get_parse::<u32>("general", "bedtime_minutes").unwrap_or(60).clamp(10, 180);
         s.idle_minutes = ini.get_parse::<u32>("general", "idle_minutes").unwrap_or(5).clamp(1, 60);
@@ -404,6 +408,7 @@ impl Settings {
         ini.set("general", "pause_fullscreen", self.pause_fullscreen as u8);
         ini.set("general", "idle_dim", self.idle_dim as u8);
         ini.set("general", "eye_breaks", self.eye_breaks as u8);
+        ini.set("general", "dim_cursor", self.dim_cursor as u8);
         ini.set("general", "bedtime_reminder", self.bedtime_reminder as u8);
         ini.set("general", "bedtime_minutes", self.bedtime_minutes);
         ini.set("general", "idle_minutes", self.idle_minutes);
@@ -504,6 +509,7 @@ mod tests {
         s.idle_minutes = 12;
         s.idle_level = 20.0;
         s.eye_breaks = true;
+        s.dim_cursor = true;
         s.bedtime_reminder = true;
         s.bedtime_minutes = 45;
         s.rules = vec![

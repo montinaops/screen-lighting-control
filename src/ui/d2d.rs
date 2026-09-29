@@ -79,6 +79,8 @@ pub enum Weight {
     Regular,
     Semibold,
     Bold,
+    /// "Segoe MDL2 Assets" icon glyphs (Windows 10 and 11).
+    Icon,
 }
 
 struct Factories {
@@ -108,15 +110,16 @@ fn text_format(f: &Factories, size: f32, weight: Weight, align: Align) -> Option
         return Some(tf.clone());
     }
     let dw = match weight {
-        Weight::Regular => DWRITE_FONT_WEIGHT_NORMAL,
+        Weight::Regular | Weight::Icon => DWRITE_FONT_WEIGHT_NORMAL,
         Weight::Semibold => DWRITE_FONT_WEIGHT_SEMI_BOLD,
         Weight::Bold => DWRITE_FONT_WEIGHT_BOLD,
     };
+    let family = if weight == Weight::Icon { w!("Segoe MDL2 Assets") } else { w!("Segoe UI") };
     let tf = unsafe {
         let tf = f
             .dwrite
             .CreateTextFormat(
-                w!("Segoe UI"),
+                family,
                 None,
                 dw,
                 DWRITE_FONT_STYLE_NORMAL,

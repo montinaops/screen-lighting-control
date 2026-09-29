@@ -4,6 +4,14 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Tray flyout (Direct2D): master brightness, warmth with a Kelvin gradient track, schedule status with "Return to
+  schedule", per-monitor sliders showing the method used, scene chips, Pause/Resume and Settings; mouse wheel on any
+  slider; closes on Esc or when it loses focus; follows light/dark theme and DPI.
+- Deep-dim safety: the first time a monitor goes below 5% a 10-second "Keep it?" countdown starts (flyout banner / OSD)
+  and reverts to 5% if not confirmed.
+- Mouse wheel over the tray icon changes brightness (low-level hook installed only while hovering the icon).
+### Fixed
+- Paused tray glyph, hotkey-conflict tooltip and flyout refresh were not wired into `apply` (edit had silently not applied in #7).
 - Automatic schedule: offline NOAA sunrise/sunset, wake-time aware day start, smooth mired-space transitions,
   day/evening/night warmth, optional night brightness ceiling, fixed-times mode, f.lux-style overrides until the next
   phase, "Automatic schedule" / "Return to schedule" in the tray, re-evaluated on clock/time-zone changes.

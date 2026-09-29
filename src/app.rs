@@ -9,14 +9,18 @@ use crate::model::{self, SceneEffect, Settings};
 use crate::monitors::{self, Monitor};
 use crate::schedule;
 use crate::tray::{self, MenuItem, Tray};
+use crate::ui::flyout::{self, Flyout};
 use crate::ui::{osd, osd::Osd, theme};
 use crate::win::{self, CONTROLLER_CLASS, WM_APP_ACTIVATE, WM_APP_ENGINE, WM_APP_TRAY};
 use windows::core::w;
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
 use windows::Win32::System::RemoteDesktop::{
     WTSRegisterSessionNotification, WTSUnRegisterSessionNotification, NOTIFY_FOR_THIS_SESSION,
 };
 use windows::Win32::UI::Shell::NIN_SELECT;
+
+/// NIN_SELECT | NINF_KEY (Enter/Space on the focused tray icon).
+const NIN_KEYSELECT: u32 = 0x0401;
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 // Context-menu command ids.
@@ -51,6 +55,16 @@ const SAVE_DELAY_MS: u32 = 1000;
 /// Detects other programs (games, drivers, Night Light) overwriting our ramps.
 const TIMER_GAMMA_CHECK: usize = 3;
 const GAMMA_CHECK_MS: u32 = 5000;
+/// Deep-dim confirmation countdown (1 s).
+const TIMER_DEEP_DIM: usize = 6;
+/// Watches whether the pointer left the tray icon (to remove the wheel hook).
+const TIMER_WHEEL_HOOK: usize = 7;
+/// Below this brightness the first use on a monitor must be confirmed (PRODUCT §12).
+const DEEP_DIM: f32 = 5.0;
+const DEEP_DIM_SECONDS: u32 = 10;
+/// Posted by the tray wheel hook; wParam = wheel delta (i16).
+const WM_APP_TRAY_WHEEL: u32 = 0x8000 + 11;
+
 /// Periodic housekeeping (pause expiry, schedule).
 const TIMER_TICK: usize = 5;
 const TICK_MS: u32 = 30_000;
@@ -139,6 +153,30 @@ pub struct App {
     override_k: Option<(u32, schedule::Phase)>,
     /// Night factor (0–1) from the schedule, for the optional night brightness ceiling.
     night: f32,
+    flyout: Option<Box<Flyout>>,
+    /// Seconds left to confirm a very low brightness.
+    deep_dim_left: Option<u32>,
+    active_scene: Option<usize>,
+    wheel_hook: Option<windows::Win32::UI::WindowsAndMessaging::HHOOK>,
+}
+
+thread_local! {
+    /// Tray icon rectangle and controller window for the low-level wheel hook.
+    static WHEEL_TARGET: std::cell::Cell<(RECT, isize)> = const { std::cell::Cell::new((RECT { left: 0, top: 0, right: 0, bottom: 0 }, 0)) };
+}
+
+unsafe extern "system" fn wheel_hook(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT {
+    if code >= 0 && wp.0 as u32 == WM_MOUSEWHEEL {
+        let info = &*(lp.0 as *const MSLLHOOKSTRUCT);
+        let (r, hwnd) = WHEEL_TARGET.with(|t| t.get());
+        let p = info.pt;
+        if hwnd != 0 && p.x >= r.left && p.x < r.right && p.y >= r.top && p.y < r.bottom {
+            let delta = (info.mouseData >> 16) as u16 as i16;
+            win::post(HWND(hwnd as *mut _), WM_APP_TRAY_WHEEL, delta as u16 as usize, 0);
+            return LRESULT(1);
+        }
+    }
+    CallNextHookEx(None, code, wp, lp)
 }
 
 fn now_ms() -> u64 {
@@ -180,6 +218,10 @@ impl App {
                 hotkey_conflicts: Vec::new(),
                 override_k: None,
                 night: 0.0,
+                flyout: None,
+                deep_dim_left: None,
+                active_scene: None,
+                wheel_hook: None,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -203,6 +245,7 @@ impl App {
             app.hw_worker = Some(hardware::Worker::start(events.clone()));
             app.events = Some(events);
             app.tray = Some(Tray::new(hwnd));
+            app.flyout = Flyout::create(hwnd, theme::palette(app.settings.theme));
             app.update_schedule(true);
             app.refresh_monitors();
             let _ = WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
@@ -376,11 +419,19 @@ impl App {
             let alpha = engine::overlay_alpha(split.software, s.gamma_scale);
             self.overlays.set(i, s.mon.rect, alpha);
         }
-        let tip =
-            format!("SLC — {:.0}% · {}K {}", self.master(), self.kelvin, color::preset_name(self.kelvin));
+        let mut tip = if paused {
+            "SLC — paused".to_string()
+        } else {
+            format!("SLC — {:.0}% · {}K {}", self.master(), self.kelvin, color::preset_name(self.kelvin))
+        };
+        if !self.hotkey_conflicts.is_empty() {
+            tip.push_str(&format!("\nHotkey in use: {}", self.hotkey_conflicts.join(", ")));
+        }
         if let Some(t) = self.tray.as_mut() {
             t.set_tip(&tip);
+            t.set_glyph(if paused { crate::icon::Glyph::Paused } else { crate::icon::Glyph::Normal });
         }
+        self.update_flyout();
     }
 
     /// Results from the worker threads.
@@ -453,7 +504,13 @@ impl App {
             .chain((0..self.settings.scenes.len() as i32).map(|i| HOTKEY_SCENE_BASE + i))
             .collect();
         hotkeys::unregister_all(self.hwnd, ids);
+        if let Some(h) = self.wheel_hook.take() {
+            unsafe {
+                let _ = UnhookWindowsHookEx(h);
+            }
+        }
         self.osd = None;
+        self.flyout = None;
         self.gamma_worker = None;
         self.hw_worker = None;
         self.overlays.clear();
@@ -495,8 +552,10 @@ impl App {
                 let target = ((self.master() + step) / BRIGHTNESS_STEP).round() * BRIGHTNESS_STEP;
                 self.resume_if_paused();
                 self.set_master(target);
+                self.active_scene = None;
                 self.commit();
                 self.show_osd(osd::Content::Brightness(self.master()));
+                self.check_deep_dim();
             }
             "warmer" | "cooler" => {
                 let step = if *action == "warmer" { -KELVIN_STEP } else { KELVIN_STEP };
@@ -596,6 +655,7 @@ impl App {
     fn apply_scene(&mut self, index: usize) {
         let Some(scene) = self.settings.scenes.get(index).cloned() else { return };
         self.scene_index = index;
+        self.active_scene = Some(index);
         self.resume_if_paused();
         if let Some(b) = scene.brightness {
             self.set_master(b);
@@ -613,7 +673,10 @@ impl App {
             (Some(b), None) => format!("{b:.0}%"),
             (None, None) => String::new(),
         };
-        self.show_osd(osd::Content::Message(scene.name, sub));
+        if !self.flyout.as_ref().is_some_and(|f| f.visible()) {
+            self.show_osd(osd::Content::Message(scene.name, sub));
+        }
+        self.check_deep_dim();
     }
 
     /// Pauses all effects for `minutes` (None = until resumed).
@@ -667,13 +730,210 @@ impl App {
         }
     }
 
+    fn flyout_state(&self) -> flyout::State {
+        let sc = &self.settings.schedule;
+        let schedule_text = if !sc.enabled {
+            "Manual warmth · schedule off".to_string()
+        } else if let Some((_, phase)) = self.override_k {
+            format!("Manual until the {} ends", format!("{phase:?}").to_lowercase())
+        } else {
+            let phase = schedule::target_now(sc).phase;
+            let place = if sc.has_location() && sc.mode == model::ScheduleMode::Sun {
+                sc.city.clone()
+            } else {
+                "fixed times".to_string()
+            };
+            format!("Automatic · {phase:?} · {place}")
+        };
+        flyout::State {
+            master: self.master(),
+            kelvin: self.kelvin,
+            monitors: self
+                .screens
+                .iter()
+                .map(|s| flyout::MonitorRow {
+                    name: s.mon.name.clone(),
+                    brightness: s.brightness,
+                    hardware: s.hw.is_some(),
+                })
+                .collect(),
+            scenes: self.settings.scenes.iter().map(|s| s.name.clone()).collect(),
+            active_scene: self.active_scene,
+            paused: self.paused_until.is_some(),
+            schedule_text,
+            overriding: self.override_k.is_some(),
+            deep_dim_countdown: self.deep_dim_left,
+        }
+    }
+
+    fn update_flyout(&mut self) {
+        let visible = self.flyout.as_ref().is_some_and(|f| f.visible());
+        if visible {
+            let st = self.flyout_state();
+            let pal = theme::palette(self.settings.theme);
+            if let Some(f) = self.flyout.as_mut() {
+                f.set_state(st, pal);
+            }
+        }
+    }
+
+    fn toggle_flyout(&mut self) {
+        let st = self.flyout_state();
+        let pal = theme::palette(self.settings.theme);
+        let anchor = self.tray.as_ref().and_then(|t| t.rect());
+        if let Some(f) = self.flyout.as_mut() {
+            if f.visible() || f.just_hidden() {
+                f.hide();
+            } else {
+                f.set_state(st, pal);
+                f.show(anchor);
+            }
+        }
+    }
+
+    fn on_flyout_action(&mut self, a: flyout::Action) {
+        use flyout::Action;
+        match a {
+            Action::Master(v) => {
+                self.resume_if_paused();
+                self.active_scene = None;
+                self.set_master(v);
+                self.commit();
+            }
+            Action::Kelvin(k) => {
+                self.resume_if_paused();
+                self.active_scene = None;
+                self.set_kelvin(k);
+                self.commit();
+            }
+            Action::Monitor(i, v) => {
+                self.resume_if_paused();
+                self.active_scene = None;
+                self.set_brightness(Some(i), v);
+                self.commit();
+            }
+            Action::Scene(i) => self.apply_scene(i),
+            Action::TogglePause => {
+                if self.paused_until.is_some() {
+                    self.resume();
+                } else {
+                    self.pause(None);
+                }
+            }
+            Action::ReturnToSchedule => {
+                self.override_k = None;
+                self.update_schedule(true);
+                self.apply();
+            }
+            Action::KeepDeepDim => {
+                for s in &self.screens {
+                    if s.brightness < DEEP_DIM {
+                        self.settings.monitor_mut(&s.key).deep_dim_ok = true;
+                    }
+                }
+                self.deep_dim_left = None;
+                unsafe {
+                    let _ = KillTimer(Some(self.hwnd), TIMER_DEEP_DIM);
+                }
+                self.commit();
+            }
+            Action::OpenSettings => self.open_settings(),
+            Action::Commit => self.check_deep_dim(),
+        }
+    }
+
+    fn open_settings(&mut self) {
+        info!("settings window requested");
+    }
+
+    /// Starts the "keep this?" countdown the first time a monitor goes below 5% (PRODUCT §12).
+    fn check_deep_dim(&mut self) {
+        if self.deep_dim_left.is_some() {
+            return;
+        }
+        let needs = self.screens.iter().any(|s| {
+            s.brightness < DEEP_DIM && !self.settings.monitor(&s.key).is_some_and(|m| m.deep_dim_ok)
+        });
+        if needs {
+            self.deep_dim_left = Some(DEEP_DIM_SECONDS);
+            unsafe { SetTimer(Some(self.hwnd), TIMER_DEEP_DIM, 1000, None) };
+            if !self.flyout.as_ref().is_some_and(|f| f.visible()) {
+                self.show_osd(osd::Content::Message(
+                    "Very dark".into(),
+                    format!("Open SLC and press Keep within {DEEP_DIM_SECONDS} s"),
+                ));
+            }
+            self.update_flyout();
+        }
+    }
+
+    fn on_deep_dim_tick(&mut self) {
+        let Some(left) = self.deep_dim_left else { return };
+        if left > 1 {
+            self.deep_dim_left = Some(left - 1);
+            self.update_flyout();
+            return;
+        }
+        self.deep_dim_left = None;
+        unsafe {
+            let _ = KillTimer(Some(self.hwnd), TIMER_DEEP_DIM);
+        }
+        let mut reverted = false;
+        for s in &mut self.screens {
+            if s.brightness < DEEP_DIM && !self.settings.monitor(&s.key).is_some_and(|m| m.deep_dim_ok) {
+                s.brightness = DEEP_DIM;
+                reverted = true;
+            }
+        }
+        if reverted {
+            info!("deep dim not confirmed; reverted to {DEEP_DIM}%");
+            self.commit();
+            self.show_osd(osd::Content::Message(
+                "Reverted".into(),
+                format!("Brightness set back to {DEEP_DIM:.0}%"),
+            ));
+        }
+    }
+
+    fn on_tray_hover(&mut self) {
+        let Some(rect) = self.tray.as_ref().and_then(|t| t.rect()) else { return };
+        WHEEL_TARGET.with(|t| t.set((rect, self.hwnd.0 as isize)));
+        if self.wheel_hook.is_none() {
+            self.wheel_hook =
+                unsafe { SetWindowsHookExW(WH_MOUSE_LL, Some(wheel_hook), Some(win::hinstance()), 0).ok() };
+            unsafe { SetTimer(Some(self.hwnd), TIMER_WHEEL_HOOK, 250, None) };
+        }
+    }
+
+    fn check_wheel_hook(&mut self) {
+        let mut pt = POINT::default();
+        unsafe {
+            let _ = GetCursorPos(&mut pt);
+        }
+        let (r, _) = WHEEL_TARGET.with(|t| t.get());
+        let inside = pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom;
+        if !inside {
+            if let Some(h) = self.wheel_hook.take() {
+                unsafe {
+                    let _ = UnhookWindowsHookEx(h);
+                }
+            }
+            unsafe {
+                let _ = KillTimer(Some(self.hwnd), TIMER_WHEEL_HOOK);
+            }
+        }
+    }
+
     fn on_tray(&mut self, event: u32, anchor: POINT) {
         match event {
-            WM_CONTEXTMENU | WM_RBUTTONUP => self.show_menu(anchor),
-            e if e == NIN_SELECT || e == WM_LBUTTONUP => {
-                // Flyout arrives in a later milestone; show the menu for now.
-                self.show_menu(anchor);
+            WM_CONTEXTMENU | WM_RBUTTONUP => {
+                if let Some(f) = self.flyout.as_mut() {
+                    f.hide();
+                }
+                self.show_menu(anchor)
             }
+            e if e == NIN_SELECT || e == NIN_KEYSELECT || e == WM_LBUTTONUP => self.toggle_flyout(),
+            WM_MOUSEMOVE => self.on_tray_hover(),
             _ => {}
         }
     }
@@ -765,6 +1025,7 @@ impl App {
                 self.resume_if_paused();
                 self.set_master(BRIGHTNESS_STEPS[(c - CMD_BRIGHTNESS_BASE) as usize]);
                 self.commit();
+                self.check_deep_dim();
             }
             _ => {}
         }
@@ -776,7 +1037,11 @@ impl App {
         let Ok(reqs) = crate::cli::parse_forward(line) else { return false };
         for r in reqs {
             match r {
-                crate::cli::Request::Brightness { value, monitor } => self.set_brightness(monitor, value),
+                crate::cli::Request::Brightness { value, monitor } => {
+                    self.resume_if_paused();
+                    self.set_brightness(monitor, value);
+                    self.active_scene = None;
+                }
                 crate::cli::Request::Kelvin(k) => self.set_kelvin(color::clamp_kelvin(k as i64)),
                 crate::cli::Request::Scene(name) => {
                     match self.settings.scenes.iter().position(|s| s.name.eq_ignore_ascii_case(&name)) {
@@ -795,6 +1060,7 @@ impl App {
             }
         }
         self.commit();
+        self.check_deep_dim();
         true
     }
 
@@ -827,6 +1093,32 @@ impl App {
             }
             WM_APP_ACTIVATE => {
                 info!("activated by another instance");
+                if !self.flyout.as_ref().is_some_and(|f| f.visible()) {
+                    self.toggle_flyout();
+                }
+                Some(LRESULT(0))
+            }
+            flyout::WM_APP_FLYOUT_ACTION => {
+                let a = unsafe { Box::from_raw(lp.0 as *mut flyout::Action) };
+                self.on_flyout_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_APP_TRAY_WHEEL => {
+                let delta = wp.0 as u16 as i16;
+                let step = if delta > 0 { 2.0 } else { -2.0 };
+                self.resume_if_paused();
+                self.set_master(self.master() + step);
+                self.active_scene = None;
+                self.commit();
+                self.show_osd(osd::Content::Brightness(self.master()));
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_DEEP_DIM => {
+                self.on_deep_dim_tick();
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_WHEEL_HOOK => {
+                self.check_wheel_hook();
                 Some(LRESULT(0))
             }
             WM_DISPLAYCHANGE | WM_DPICHANGED => {

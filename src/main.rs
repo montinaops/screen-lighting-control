@@ -6,10 +6,13 @@
 mod app;
 mod cli;
 mod color;
+mod config;
 mod engine;
 mod icon;
 mod log;
+mod model;
 mod monitors;
+mod safety;
 mod tray;
 mod win;
 mod worker;
@@ -90,7 +93,14 @@ fn run() -> i32 {
             return 0;
         }
     }
-    let app = match app::App::create() {
+    let paths = config::resolve();
+    safety::install(&paths.state);
+    let recovered = safety::begin_session();
+    if recovered {
+        info!("previous session did not end cleanly; resetting gamma");
+        safety::emergency_reset();
+    }
+    let app = match app::App::create(paths, recovered) {
         Ok(a) => a,
         Err(e) => {
             info!("startup failed: {e}");

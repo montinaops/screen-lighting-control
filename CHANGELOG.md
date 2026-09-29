@@ -4,6 +4,11 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Settings persistence (`slc.ini`, atomic writes, saved 1 s after a change) with portable/installed path resolution;
+  per-monitor brightness, hardware share, enable flag and original backlight; schedule, scenes and hotkeys model.
+- Safety net: session flag with crash recovery (neutral gamma + notice), panic hook and unhandled-exception filter.
+- Robustness: re-apply after unlock and resume (re-probing monitors), clean shutdown on sign-out, and a 5 s check that
+  re-applies our ramp when another program overwrites it.
 - Hardware brightness stage: DDC/CI (VCP 0x10, with retry) for external monitors and the display-brightness IOCTL for
   laptop panels, on a debounced worker thread; SLC adopts each monitor's current backlight on first sight.
 - Gamma writes moved to a worker thread; overlay opacity predicted from the learned bound and corrected on completion.

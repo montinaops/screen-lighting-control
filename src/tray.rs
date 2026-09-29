@@ -92,6 +92,18 @@ impl Tray {
         }
     }
 
+    /// Shows a balloon / toast notification from the tray icon.
+    pub fn notify(&self, title: &str, text: &str) {
+        let mut nid = self.base();
+        nid.uFlags = windows::Win32::UI::Shell::NIF_INFO;
+        win::copy_wide(&mut nid.szInfoTitle, title);
+        win::copy_wide(&mut nid.szInfo, text);
+        nid.dwInfoFlags = windows::Win32::UI::Shell::NIIF_INFO;
+        unsafe {
+            let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
+        }
+    }
+
     /// Screen rectangle of the icon (for anchoring the flyout and wheel hit-testing).
     pub fn rect(&self) -> Option<RECT> {
         let id = NOTIFYICONIDENTIFIER {

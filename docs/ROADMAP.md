@@ -11,7 +11,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 3 | feat: monitors + gamma engine | Monitor enumeration, Kelvin math, gamma ramps with range fallback, identity reset | ✅ |
 | 4 | feat: overlay dimming | Capture-excluded click-through overlays, z-order keeping | ✅ |
 | 5 | feat: hardware brightness | DDC/CI + laptop panel IOCTL on a worker thread; hybrid pipeline split | ✅ |
-| 6 | feat: settings + safety net | INI persistence, state file, dirty-flag restore, panic hook, display/power events | ⬜ |
+| 6 | feat: settings + safety net | INI persistence, state file, dirty-flag restore, panic hook, display/power events | ✅ |
 | 7 | feat: hotkeys + OSD | Global hotkeys, OSD popup | ⬜ |
 | 8 | feat: schedule | NOAA solar calculations, embedded cities, schedule curve, transitions, overrides | ⬜ |
 | 9 | feat: flyout UI | Direct2D flyout with sliders, per-monitor list, scenes, pause | ⬜ |

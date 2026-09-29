@@ -18,6 +18,7 @@ pub mod glyph {
     pub const KEYBOARD: &str = "\u{E765}";
     pub const INFO: &str = "\u{E946}";
     pub const PALETTE: &str = "\u{E790}";
+    pub const APPS: &str = "\u{E71D}";
 }
 
 pub const SLIDER_H: f32 = 24.0;

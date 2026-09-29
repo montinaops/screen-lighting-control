@@ -3,9 +3,10 @@
 use crate::color;
 use crate::config::{Ini, Paths};
 use crate::engine::{self, gamma, hardware, overlay::Overlays, Event, Events};
+use crate::foreground;
 use crate::hotkeys;
 use crate::info;
-use crate::model::{self, SceneEffect, Settings};
+use crate::model::{self, RuleAction, SceneEffect, Settings};
 use crate::monitors::{self, Monitor};
 use crate::schedule;
 use crate::tray::{self, MenuItem, Tray};
@@ -182,6 +183,13 @@ pub struct App {
     darkroom: bool,
     /// Movie mode: (end tick, warmth).
     movie: Option<(u64, u32)>,
+    watcher: foreground::Watcher,
+    /// Rule of the app currently in the foreground: (exe, action).
+    rule: Option<(String, RuleAction)>,
+    /// A fullscreen app is in the foreground and "pause in fullscreen" is on.
+    fullscreen: bool,
+    /// Recently seen foreground apps (for adding rules in Settings).
+    recent_apps: Vec<String>,
 }
 
 thread_local! {
@@ -208,6 +216,14 @@ static RELAUNCH: std::sync::Mutex<Option<(std::path::PathBuf, Vec<String>)>> = s
 
 pub fn take_relaunch() -> Option<(std::path::PathBuf, Vec<String>)> {
     RELAUNCH.lock().ok()?.take()
+}
+
+fn rule_text(a: &RuleAction) -> String {
+    match a {
+        RuleAction::Disable => "effects off".into(),
+        RuleAction::NoOverlay => "no overlay".into(),
+        RuleAction::Scene(s) => format!("scene {s}"),
+    }
 }
 
 fn now_ms() -> u64 {
@@ -259,6 +275,10 @@ impl App {
                 magnifier: Default::default(),
                 darkroom: false,
                 movie: None,
+                watcher: Default::default(),
+                rule: None,
+                fullscreen: false,
+                recent_apps: Vec::new(),
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -290,6 +310,7 @@ impl App {
             SetTimer(Some(hwnd), TIMER_TICK, TICK_MS, None);
             SetTimer(Some(hwnd), TIMER_TRIM, TRIM_DELAY_MS, None);
             app.register_hotkeys();
+            app.update_watcher();
             if crate::install::night_light_on() {
                 info!("Windows Night Light is on");
                 if let Some(t) = &app.tray {
@@ -425,15 +446,25 @@ impl App {
     /// Pushes the current state to every monitor: split → hardware / gamma (async) → overlay.
     #[allow(clippy::needless_range_loop)] // indexes screens, overlays and workers in lockstep
     fn apply(&mut self) {
-        let paused = self.paused_until.is_some();
+        let rule_off = matches!(self.rule, Some((_, RuleAction::Disable))) || self.fullscreen;
+        let paused = self.paused_until.is_some() || rule_off;
+        let no_overlay = matches!(self.rule, Some((_, RuleAction::NoOverlay)));
+        let rule_scene = match &self.rule {
+            Some((_, RuleAction::Scene(name))) => {
+                self.settings.scenes.iter().find(|s| &s.name == name).cloned()
+            }
+            _ => None,
+        };
+        let scene_b = rule_scene.as_ref().and_then(|s| s.brightness);
+        let scene_k = rule_scene.as_ref().and_then(|s| s.kelvin);
         let ceilings: Vec<f32> =
-            self.screens.iter().map(|s| self.effective_brightness(s.brightness)).collect();
+            self.screens.iter().map(|s| self.effective_brightness(scene_b.unwrap_or(s.brightness))).collect();
         for i in 0..self.screens.len() {
             let s = &mut self.screens[i];
             // A disabled monitor gets neutral software effects (hardware is left alone).
             let active = s.enabled && !paused;
             let (brightness, kelvin) = if active {
-                (ceilings[i], self.preview_k.unwrap_or(self.kelvin))
+                (ceilings[i], self.preview_k.or(scene_k).unwrap_or(self.kelvin))
             } else {
                 (engine::MAX_BRIGHTNESS, color::NEUTRAL_KELVIN)
             };
@@ -464,10 +495,14 @@ impl App {
                 s.gamma_scale = gamma::plan(white, split.software, s.gamma_bound - 0.002).0;
                 s.gamma_sent = Some(want);
             }
-            let alpha = engine::overlay_alpha(split.software, s.gamma_scale);
+            let alpha = if no_overlay { 0.0 } else { engine::overlay_alpha(split.software, s.gamma_scale) };
             self.overlays.set(i, s.mon.rect, alpha);
         }
-        let mut tip = if paused {
+        let mut tip = if let Some((exe, action)) = &self.rule {
+            format!("SLC — rule for {exe}: {}", rule_text(action))
+        } else if self.fullscreen {
+            "SLC — paused while a fullscreen app is active".to_string()
+        } else if paused {
             "SLC — paused".to_string()
         } else {
             format!("SLC — {:.0}% · {}K {}", self.master(), self.kelvin, color::preset_name(self.kelvin))
@@ -845,7 +880,11 @@ impl App {
 
     fn flyout_state(&self) -> flyout::State {
         let sc = &self.settings.schedule;
-        let schedule_text = if self.darkroom {
+        let schedule_text = if let Some((exe, action)) = &self.rule {
+            format!("Rule for {exe}: {}", rule_text(action))
+        } else if self.fullscreen {
+            "Paused while a fullscreen app is active".to_string()
+        } else if self.darkroom {
             "Darkroom is on · tap Darkroom again to turn it off".to_string()
         } else if let Some((until, k)) = self.movie {
             let mins = until.saturating_sub(now_ms()) / 60_000;
@@ -997,6 +1036,7 @@ impl App {
             hotkey_conflicts: self.hotkey_conflicts.clone(),
             range_expanded,
             night_light_on: crate::install::night_light_on(),
+            recent_apps: self.recent_apps.clone(),
             current_brightness: self.master(),
             current_kelvin: self.kelvin,
         }
@@ -1031,7 +1071,50 @@ impl App {
             theme::palette(self.settings.theme),
             first_page,
         );
+        self.update_watcher();
         info!("settings window opened: {}", self.settings_win.is_some());
+    }
+
+    /// The foreground hook runs only when something needs it.
+    fn update_watcher(&mut self) {
+        let on =
+            !self.settings.rules.is_empty() || self.settings.pause_fullscreen || self.settings_win.is_some();
+        self.watcher.set_enabled(self.hwnd, on);
+        if !on && (self.rule.is_some() || self.fullscreen) {
+            self.rule = None;
+            self.fullscreen = false;
+            self.invalidate();
+            self.apply();
+        } else if on {
+            let fg = unsafe { GetForegroundWindow() };
+            self.on_foreground(fg);
+        }
+    }
+
+    fn on_foreground(&mut self, hwnd: HWND) {
+        let Some((exe, own)) = foreground::exe_of(hwnd) else { return };
+        if own {
+            return; // our flyout/settings: keep whatever rule applied before
+        }
+        if exe != "explorer.exe" && !self.recent_apps.contains(&exe) {
+            self.recent_apps.insert(0, exe.clone());
+            self.recent_apps.truncate(8);
+            self.update_settings_window();
+        }
+        let rule =
+            self.settings.rules.iter().find(|r| r.exe == exe).map(|r| (r.exe.clone(), r.action.clone()));
+        let fullscreen = self.settings.pause_fullscreen && foreground::is_fullscreen(hwnd);
+        if rule != self.rule || fullscreen != self.fullscreen {
+            info!("foreground {exe}: rule={rule:?} fullscreen={fullscreen}");
+            let was_off = matches!(self.rule, Some((_, RuleAction::Disable))) || self.fullscreen;
+            self.rule = rule;
+            self.fullscreen = fullscreen;
+            let now_off = matches!(self.rule, Some((_, RuleAction::Disable))) || self.fullscreen;
+            if was_off && !now_off {
+                self.invalidate();
+            }
+            self.apply();
+        }
     }
 
     /// Settings were edited in the settings window: apply everything that depends on them.
@@ -1055,6 +1138,9 @@ impl App {
             crate::install::set_autostart(self.settings.autostart);
         }
         self.update_schedule(true);
+        self.rule = None;
+        self.fullscreen = false;
+        self.update_watcher();
         self.commit();
     }
 
@@ -1154,6 +1240,7 @@ impl App {
             Action::Closed => {
                 info!("settings window closed");
                 self.settings_win = None;
+                self.update_watcher();
                 unsafe { SetTimer(Some(self.hwnd), TIMER_TRIM, TRIM_DELAY_MS, None) };
             }
         }
@@ -1480,6 +1567,10 @@ impl App {
                 self.on_flyout_action(*a);
                 Some(LRESULT(0))
             }
+            foreground::WM_APP_FOREGROUND => {
+                self.on_foreground(HWND(lp.0 as *mut _));
+                Some(LRESULT(0))
+            }
             WM_APP_TRAY_WHEEL => {
                 let delta = wp.0 as u16 as i16;
                 let step = if delta > 0 { 2.0 } else { -2.0 };
@@ -1554,6 +1645,11 @@ impl App {
             }
             WM_TIMER if wp.0 == TIMER_GAMMA_CHECK => {
                 self.check_gamma();
+                // Videos and games can go fullscreen without a foreground change.
+                if self.settings.pause_fullscreen {
+                    let fg = unsafe { GetForegroundWindow() };
+                    self.on_foreground(fg);
+                }
                 Some(LRESULT(0))
             }
             WM_SETTINGCHANGE => {

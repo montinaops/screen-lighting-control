@@ -22,8 +22,8 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 14 | release: v1.0.0 | QA checklist, README, release workflow, tag | ✅ |
 
 ## Milestone v1.1 — automation
-- Per-app rules (disable or apply a scene when a given exe is in the foreground; fullscreen detection)
-- CLI control of the running instance (`--set`, `--scene`, `--pause`) via `WM_COPYDATA`
+- ✅ Per-app rules (off / no overlay / scene while an app is in front) and pause in fullscreen apps — #15
+- ✅ CLI control of the running instance (`--set`, `--scene`, `--pause`, `--resume`, `--settings`, `--exit`) via `WM_COPYDATA` — shipped in v1.0
 - Idle fade (dim after N minutes without input, restore on input)
 
 ## Milestone v1.2 — comfort

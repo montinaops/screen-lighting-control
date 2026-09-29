@@ -288,6 +288,17 @@ slc.exe --pause 60                           (roadmap v1.1)
 
 ---
 
+## 13a. Per-app rules (v1.1)
+
+- Rules match the foreground window's executable name (e.g. `photoshop.exe`), stored in `[rules]` as
+  `exe=disable | no_overlay | scene:<name>`.
+- **Off**: neutral software effects while the app is in front (hardware untouched).
+  **No overlay**: backlight + gamma only (for anti-cheat and capture tools). **Scene**: that scene's brightness/warmth.
+- **Pause in fullscreen apps**: effects off while the foreground window covers its whole monitor (shell windows
+  excluded); re-checked every 5 s.
+- The foreground `WinEvent` hook is installed only while rules exist, fullscreen pausing is on, or Settings is open
+  (to list recent apps). SLC's own windows never change the active rule.
+
 ## 14. Performance budget
 
 | Metric | Budget |

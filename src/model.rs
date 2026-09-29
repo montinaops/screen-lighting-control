@@ -127,6 +127,54 @@ pub fn default_scenes() -> Vec<Scene> {
     ]
 }
 
+/// What an app rule does while that app is in the foreground.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuleAction {
+    /// No SLC effects (neutral colors, no software dimming), e.g. for color-critical apps.
+    Disable,
+    /// Keep backlight and gamma, but never show the overlay (games with anti-cheat, capture tools).
+    NoOverlay,
+    /// Apply a scene's brightness/warmth temporarily.
+    Scene(String),
+}
+
+impl RuleAction {
+    pub fn to_ini(&self) -> String {
+        match self {
+            RuleAction::Disable => "disable".into(),
+            RuleAction::NoOverlay => "no_overlay".into(),
+            RuleAction::Scene(s) => format!("scene:{s}"),
+        }
+    }
+    pub fn parse(s: &str) -> Option<RuleAction> {
+        let l = s.trim();
+        match l.to_ascii_lowercase().as_str() {
+            "disable" => Some(RuleAction::Disable),
+            "no_overlay" => Some(RuleAction::NoOverlay),
+            _ => l
+                .get(..6)
+                .filter(|p| p.eq_ignore_ascii_case("scene:"))
+                .map(|_| RuleAction::Scene(l[6..].trim().to_string())),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Rule {
+    /// Lowercase executable file name, e.g. `photoshop.exe`.
+    pub exe: String,
+    pub action: RuleAction,
+}
+
+/// Normalizes a user-typed program name to a lowercase `name.exe`.
+pub fn normalize_exe(s: &str) -> Option<String> {
+    let name = s.trim().rsplit(['\\', '/']).next()?.trim().to_ascii_lowercase();
+    if name.is_empty() || name.contains(['=', '[', ']']) {
+        return None;
+    }
+    Some(if name.ends_with(".exe") { name } else { format!("{name}.exe") })
+}
+
 /// Hotkey actions and their default bindings (PRODUCT §9).
 pub const HOTKEY_ACTIONS: &[(&str, &str, &str)] = &[
     ("brightness_up", "Win+Alt+Up", "Brightness up"),
@@ -152,6 +200,9 @@ pub struct Settings {
     pub scenes: Vec<Scene>,
     /// (action, binding) — binding "" = disabled.
     pub hotkeys: Vec<(String, String)>,
+    pub rules: Vec<Rule>,
+    /// Pause effects while any app is fullscreen (games, videos, presentations).
+    pub pause_fullscreen: bool,
 }
 
 impl Default for Settings {
@@ -165,6 +216,8 @@ impl Default for Settings {
             schedule: Schedule::default(),
             scenes: default_scenes(),
             hotkeys: HOTKEY_ACTIONS.iter().map(|(a, b, _)| (a.to_string(), b.to_string())).collect(),
+            rules: Vec::new(),
+            pause_fullscreen: false,
         }
     }
 }
@@ -290,6 +343,12 @@ impl Settings {
                 })
                 .collect();
         }
+        s.pause_fullscreen = ini.get_bool("general", "pause_fullscreen").unwrap_or(false);
+        s.rules = ini
+            .keys("rules")
+            .into_iter()
+            .filter_map(|(k, v)| Some(Rule { exe: normalize_exe(&k)?, action: RuleAction::parse(&v)? }))
+            .collect();
         for (action, binding) in s.hotkeys.iter_mut() {
             if let Some(v) = ini.get("hotkeys", action) {
                 *binding = v.to_string();
@@ -312,6 +371,10 @@ impl Settings {
             },
         );
         ini.set("general", "kelvin", self.kelvin);
+        ini.set("general", "pause_fullscreen", self.pause_fullscreen as u8);
+        for r in &self.rules {
+            ini.set("rules", &r.exe, r.action.to_ini());
+        }
         let sc = &self.schedule;
         ini.set("schedule", "enabled", sc.enabled as u8);
         ini.set("schedule", "mode", if sc.mode == ScheduleMode::Fixed { "fixed" } else { "sun" });
@@ -397,6 +460,12 @@ mod tests {
         m.original_hw = Some(80.0);
         s.scenes.truncate(2);
         s.hotkeys[0].1 = "Ctrl+Alt+F1".into();
+        s.pause_fullscreen = true;
+        s.rules = vec![
+            Rule { exe: "photoshop.exe".into(), action: RuleAction::Disable },
+            Rule { exe: "game.exe".into(), action: RuleAction::NoOverlay },
+            Rule { exe: "vlc.exe".into(), action: RuleAction::Scene("Movie".into()) },
+        ];
         let back = Settings::from_ini(&Ini::parse(&s.to_ini().to_text()));
         assert_eq!(back, s);
     }
@@ -413,6 +482,15 @@ mod tests {
         let m = s.monitor("x").unwrap();
         assert_eq!(m.brightness, engine::MIN_BRIGHTNESS);
         assert_eq!(m.hw_share, engine::MAX_HW_SHARE);
+    }
+
+    #[test]
+    fn exe_names_and_actions() {
+        assert_eq!(normalize_exe(r"C:\Program Files\Adobe\Photoshop.EXE").as_deref(), Some("photoshop.exe"));
+        assert_eq!(normalize_exe("vlc").as_deref(), Some("vlc.exe"));
+        assert_eq!(normalize_exe("  "), None);
+        assert_eq!(RuleAction::parse("Scene: Night"), Some(RuleAction::Scene("Night".into())));
+        assert_eq!(RuleAction::parse("bogus"), None);
     }
 
     #[test]

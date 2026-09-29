@@ -76,6 +76,15 @@ impl Ini {
         }
     }
 
+    /// All key/value pairs of a section, in file order.
+    pub fn keys(&self, section: &str) -> Vec<(String, String)> {
+        self.sections
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(section))
+            .map(|(_, pairs)| pairs.clone())
+            .unwrap_or_default()
+    }
+
     pub fn get_parse<T: std::str::FromStr>(&self, section: &str, key: &str) -> Option<T> {
         self.get(section, key)?.parse().ok()
     }

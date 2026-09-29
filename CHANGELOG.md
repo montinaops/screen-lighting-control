@@ -4,6 +4,11 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Per-app rules (Settings › Rules): while a given program is in front, turn SLC off (color-critical work), drop only
+  the overlay (games with anti-cheat, capture tools), or apply a scene. Add rules by name or from recently used apps.
+- Pause in fullscreen apps (games, videos, presentations), re-checked every 5 s for apps that go fullscreen in place.
+
 ## [1.0.0] - 2026-09-30
 
 First release: the v1.0 core (see `docs/ROADMAP.md`).

@@ -7,6 +7,7 @@ mod cli;
 mod color;
 mod config;
 mod engine;
+mod foreground;
 mod glyph;
 mod hotkeys;
 mod icon;

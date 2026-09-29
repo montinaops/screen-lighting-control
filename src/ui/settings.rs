@@ -71,6 +71,7 @@ pub struct View {
     pub night_light_on: bool,
     pub current_brightness: f32,
     pub current_kelvin: u32,
+    pub recent_apps: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -79,6 +80,7 @@ pub enum Page {
     Displays,
     Schedule,
     Scenes,
+    Rules,
     Hotkeys,
     About,
 }
@@ -89,11 +91,12 @@ impl Page {
     }
 }
 
-const PAGES: [(Page, &str, &str); 6] = [
+const PAGES: [(Page, &str, &str); 7] = [
     (Page::General, glyph::SETTINGS, "General"),
     (Page::Displays, glyph::MONITOR, "Displays"),
     (Page::Schedule, glyph::CLOCK, "Schedule"),
     (Page::Scenes, glyph::PALETTE, "Scenes"),
+    (Page::Rules, glyph::APPS, "Rules"),
     (Page::Hotkeys, glyph::KEYBOARD, "Hotkeys"),
     (Page::About, glyph::INFO, "About"),
 ];
@@ -131,6 +134,12 @@ enum Id {
     SceneAdd,
     SceneDelete,
     Hotkey(usize),
+    PauseFullscreen,
+    RuleAction(usize),
+    RuleScene(usize),
+    RuleDelete(usize),
+    RecentApp(usize),
+    RuleEdit,
     HotkeyClear(usize),
     HotkeysReset,
     Install,
@@ -359,6 +368,7 @@ impl SettingsWindow {
             Page::Displays => self.page_displays(&mut b),
             Page::Schedule => self.page_schedule(&mut b),
             Page::Scenes => self.page_scenes(&mut b),
+            Page::Rules => self.page_rules(&mut b),
             Page::Hotkeys => self.page_hotkeys(&mut b),
             Page::About => self.page_about(&mut b),
         }
@@ -625,6 +635,60 @@ impl SettingsWindow {
         }
     }
 
+    fn page_rules(&self, b: &mut Builder) {
+        let s = &self.view.settings;
+        b.title("Rules");
+        b.toggle_row(
+            Id::PauseFullscreen,
+            "Pause in fullscreen apps",
+            "Turn effects off while a game, video or presentation fills the screen.",
+            s.pause_fullscreen,
+        );
+        b.heading("App rules");
+        b.text("While one of these apps is in front, SLC changes its behavior.", self.palette.subtext);
+        for (i, r) in s.rules.iter().enumerate() {
+            let (sel, desc) = match &r.action {
+                model::RuleAction::Disable => (0, "No SLC effects — for color-critical work (photo and video editing)."),
+                model::RuleAction::NoOverlay => {
+                    (1, "Backlight and gamma only, never the overlay — for games with anti-cheat and capture tools.")
+                }
+                model::RuleAction::Scene(_) => (2, "Applies a scene while the app is in front (click the scene to change it)."),
+            };
+            let mut controls =
+                vec![(Some(Id::RuleDelete(i)), 32.0, 32.0, Kind::Button(glyph::CLOSE.into(), false))];
+            if let model::RuleAction::Scene(name) = &r.action {
+                controls.push((Some(Id::RuleScene(i)), 120.0, 32.0, Kind::Button(name.clone(), false)));
+            }
+            controls.push((
+                Some(Id::RuleAction(i)),
+                270.0,
+                32.0,
+                Kind::Segmented(vec!["Off", "No overlay", "Scene"], sel),
+            ));
+            b.row(&r.exe, desc, controls);
+        }
+        if s.rules.is_empty() {
+            b.text("No rules yet.", self.palette.subtext);
+        }
+        b.heading("Add a rule");
+        b.row(
+            "Program",
+            "Type a program name (e.g. photoshop.exe) and press Tab, or pick a recent app below.",
+            vec![(Some(Id::RuleEdit), 220.0, 32.0, Kind::Edit)],
+        );
+        let recent: Vec<(Id, String, bool)> = self
+            .view
+            .recent_apps
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| !s.rules.iter().any(|r| &r.exe == *a))
+            .map(|(i, a)| (Id::RecentApp(i), format!("+ {a}"), false))
+            .collect();
+        if !recent.is_empty() {
+            b.chips(recent);
+        }
+    }
+
     fn page_hotkeys(&self, b: &mut Builder) {
         let s = &self.view.settings;
         b.title("Hotkeys");
@@ -823,6 +887,12 @@ impl SettingsWindow {
                     self.set_edit_text(id, &self.edit_text(id));
                 }
             }
+            (Id::RuleEdit, EN_KILLFOCUS) => {
+                if model::normalize_exe(&text).is_some() {
+                    self.edit(move |s| add_rule(s, &text));
+                    self.set_edit_text(Id::RuleEdit, "");
+                }
+            }
             (Id::SceneName, EN_KILLFOCUS) => {
                 let name = text.trim().replace(['[', ']', '='], "");
                 if let (Some(i), false) = (self.local.selected_scene, name.is_empty()) {
@@ -988,6 +1058,50 @@ impl SettingsWindow {
                 s.hotkeys =
                     model::HOTKEY_ACTIONS.iter().map(|(a, b, _)| (a.to_string(), b.to_string())).collect()
             }),
+            Id::PauseFullscreen => self.edit(|s| s.pause_fullscreen = !s.pause_fullscreen),
+            Id::RuleAction(i) => {
+                let seg = self.segment_at(id, x, 3);
+                let first_scene =
+                    self.view.settings.scenes.first().map(|s| s.name.clone()).unwrap_or_default();
+                self.edit(move |s| {
+                    if let Some(r) = s.rules.get_mut(i) {
+                        r.action = match seg {
+                            0 => model::RuleAction::Disable,
+                            1 => model::RuleAction::NoOverlay,
+                            _ => match &r.action {
+                                model::RuleAction::Scene(n) => model::RuleAction::Scene(n.clone()),
+                                _ => model::RuleAction::Scene(first_scene),
+                            },
+                        };
+                    }
+                });
+            }
+            Id::RuleScene(i) => self.edit(move |s| {
+                // Cycle through the scenes.
+                let names: Vec<String> = s.scenes.iter().map(|sc| sc.name.clone()).collect();
+                if let Some(r) = s.rules.get_mut(i) {
+                    if let model::RuleAction::Scene(n) = &r.action {
+                        let next = names
+                            .iter()
+                            .position(|x| x == n)
+                            .map(|p| (p + 1) % names.len().max(1))
+                            .unwrap_or(0);
+                        if let Some(nn) = names.get(next) {
+                            r.action = model::RuleAction::Scene(nn.clone());
+                        }
+                    }
+                }
+            }),
+            Id::RuleDelete(i) => self.edit(move |s| {
+                if i < s.rules.len() {
+                    s.rules.remove(i);
+                }
+            }),
+            Id::RecentApp(i) => {
+                if let Some(exe) = self.view.recent_apps.get(i).cloned() {
+                    self.edit(move |s| add_rule(s, &exe));
+                }
+            }
             Id::Install => self.send(Action::Install),
             Id::Uninstall => self.send(Action::Uninstall),
             Id::CopyDiag => self.send(Action::CopyDiagnostics),
@@ -1006,7 +1120,7 @@ impl SettingsWindow {
                 unsafe { SetCapture(self.hwnd) };
                 self.on_drag(id, x);
             }
-            Id::CityEdit | Id::Wake | Id::FixedDay | Id::FixedEvening | Id::SceneName => {}
+            Id::CityEdit | Id::Wake | Id::FixedDay | Id::FixedEvening | Id::SceneName | Id::RuleEdit => {}
         }
     }
 
@@ -1414,6 +1528,15 @@ impl SettingsWindow {
                 Some(LRESULT(0))
             }
             _ => None,
+        }
+    }
+}
+
+/// Adds a "disable" rule for `exe` unless one exists.
+fn add_rule(s: &mut Settings, exe: &str) {
+    if let Some(exe) = model::normalize_exe(exe) {
+        if !s.rules.iter().any(|r| r.exe == exe) {
+            s.rules.push(model::Rule { exe, action: model::RuleAction::Disable });
         }
     }
 }

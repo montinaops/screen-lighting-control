@@ -134,26 +134,6 @@ pub fn set_autostart(on: bool) -> bool {
     }
 }
 
-/// Current Run entry, if any.
-pub fn autostart_entry() -> Option<String> {
-    let mut buf = [0u16; 1024];
-    let mut size = (buf.len() * 2) as u32;
-    unsafe {
-        RegGetValueW(
-            HKEY_CURRENT_USER,
-            RUN_KEY,
-            RUN_VALUE,
-            RRF_RT_REG_SZ,
-            None,
-            Some(buf.as_mut_ptr() as *mut _),
-            Some(&mut size),
-        )
-        .ok()
-        .ok()?;
-    }
-    Some(win::from_wide(&buf))
-}
-
 pub fn copy_to_clipboard(owner: HWND, text: &str) -> bool {
     let wide = win::wide(text);
     unsafe {

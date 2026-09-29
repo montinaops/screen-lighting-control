@@ -57,7 +57,6 @@ pub struct MonitorInfo {
     pub method: String,
     pub hdr: bool,
     pub gamma_limited: bool,
-    pub brightness: f32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -173,7 +172,6 @@ struct Local {
     city_results: Vec<cities::City>,
     selected_scene: Option<usize>,
     capture: Option<Id>,
-    new_scene_name: String,
 }
 
 pub struct SettingsWindow {
@@ -262,10 +260,6 @@ impl SettingsWindow {
             let _ = SetForegroundWindow(hwnd);
             Some(sw)
         }
-    }
-
-    pub fn hwnd(&self) -> HWND {
-        self.hwnd
     }
 
     pub fn show_page(&mut self, page: Page) {

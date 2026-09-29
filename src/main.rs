@@ -1,7 +1,5 @@
 //! Screen Lighting Control (SLC) — entry point.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-// Modules are wired up across the v1.0 milestone PRs; remove before tagging v1.0.
-#![allow(dead_code)]
 
 mod app;
 mod cities;

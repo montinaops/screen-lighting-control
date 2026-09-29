@@ -78,7 +78,6 @@ pub enum Align {
 pub enum Weight {
     Regular,
     Semibold,
-    Bold,
     /// "Segoe MDL2 Assets" icon glyphs (Windows 10 and 11).
     Icon,
 }
@@ -122,7 +121,6 @@ fn text_format_ex(
     let dw = match weight {
         Weight::Regular | Weight::Icon => DWRITE_FONT_WEIGHT_NORMAL,
         Weight::Semibold => DWRITE_FONT_WEIGHT_SEMI_BOLD,
-        Weight::Bold => DWRITE_FONT_WEIGHT_BOLD,
     };
     let family = if weight == Weight::Icon { w!("Segoe MDL2 Assets") } else { w!("Segoe UI") };
     let tf = unsafe {
@@ -313,12 +311,6 @@ impl Painter<'_> {
     pub fn ring(&self, cx: f32, cy: f32, radius: f32, c: Color, width: f32) {
         let e = D2D1_ELLIPSE { point: Vector2 { X: cx, Y: cy }, radiusX: radius, radiusY: radius };
         unsafe { self.rt.DrawEllipse(&e, self.b(c), width, None) };
-    }
-
-    pub fn line(&self, x0: f32, y0: f32, x1: f32, y1: f32, c: Color, width: f32) {
-        unsafe {
-            self.rt.DrawLine(Vector2 { X: x0, Y: y0 }, Vector2 { X: x1, Y: y1 }, self.b(c), width, None)
-        };
     }
 
     pub fn text(&self, s: &str, r: Rect, size: f32, weight: Weight, align: Align, c: Color) {

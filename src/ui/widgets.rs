@@ -11,7 +11,6 @@ pub mod glyph {
     pub const PLAY: &str = "\u{E768}";
     pub const BRIGHTNESS: &str = "\u{E706}";
     pub const MONITOR: &str = "\u{E7F4}";
-    pub const CHECK: &str = "\u{E73E}";
     pub const CLOSE: &str = "\u{E711}";
     pub const WARNING: &str = "\u{E7BA}";
     pub const CLOCK: &str = "\u{E823}";

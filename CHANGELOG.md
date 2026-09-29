@@ -3,65 +3,38 @@
 All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
-### Added
-- Expand color range: Settings › Displays › Expand… (or `--expand-range`) relaunches SLC elevated via UAC and sets
-  `GdiICMGammaRange=256`; the Displays page shows when Windows is limiting warmth.
-- HDR displays skip gamma ramps (backlight + overlay only); Windows Night Light conflict notice at startup and in
-  Displays; the UI follows the Windows light/dark theme live.
-- Self-install (`--install` or Settings › Install): copies to `%LOCALAPPDATA%\Programs\SLC`, migrates portable
-  settings, Start menu shortcut, Apps & features entry (with quiet uninstall), autostart; no admin needed.
-- Uninstall (`--uninstall [--quiet]`, Apps & features, or Settings): stops the running instance, restores neutral gamma
-  and each monitor's original backlight, removes shortcut/entries/autostart, optionally deletes settings, and removes
-  the program folder after exiting.
-- The exe now embeds an icon (generated at build time from the tray glyph), version info and an application manifest
-  (per-monitor DPI v2, Common Controls v6, Windows 10+); city search has a placeholder.
-- Darkroom: red-only, luminance-inverted full-screen color matrix (Magnification API) — no gamma range limit, removed by
-  Windows automatically if SLC exits or crashes; darkroom tray glyph; hotkey, scene chip and tray menu toggle.
-- Movie mode: 3400K for 2.5 hours regardless of the schedule, then back to automatic; shown in the flyout and menu.
-- Settings window (Direct2D, dark title bar, DPI-aware, scrollable) with six pages: General (autostart, OSD, theme),
-  Displays (per-display enable, backlight share, method/HDR/limit info, Night Light warning, Identify), Schedule
-  (offline city search, sun/fixed timing, wake time, day/evening/night colors, transitions, night brightness,
-  24-hour timeline with drag-to-preview), Scenes (save current, edit name/brightness/warmth/hotkey, delete), Hotkeys
-  (click-to-capture, conflicts, restore defaults), About (diagnostics to clipboard, open settings folder).
-- Live warmth preview while dragging color sliders or the timeline; autostart via the per-user Run key;
-  `--settings [page]` opens the window in the running instance; opens on the Schedule page when no location is set.
-- Tray flyout (Direct2D): master brightness, warmth with a Kelvin gradient track, schedule status with "Return to
-  schedule", per-monitor sliders showing the method used, scene chips, Pause/Resume and Settings; mouse wheel on any
-  slider; closes on Esc or when it loses focus; follows light/dark theme and DPI.
-- Deep-dim safety: the first time a monitor goes below 5% a 10-second "Keep it?" countdown starts (flyout banner / OSD)
-  and reverts to 5% if not confirmed.
-- Mouse wheel over the tray icon changes brightness (low-level hook installed only while hovering the icon).
-### Fixed
-- Paused tray glyph, hotkey-conflict tooltip and flyout refresh were not wired into `apply` (edit had silently not applied in #7).
-- Automatic schedule: offline NOAA sunrise/sunset, wake-time aware day start, smooth mired-space transitions,
-  day/evening/night warmth, optional night brightness ceiling, fixed-times mode, f.lux-style overrides until the next
-  phase, "Automatic schedule" / "Return to schedule" in the tray, re-evaluated on clock/time-zone changes.
-- Embedded offline city list (1,305 cities incl. all capitals; GeoNames, CC BY 4.0) with accent-insensitive search.
-- Global hotkeys (`Win+Alt+…`, rebindable, conflicts reported in the tooltip), with the panic hotkey registered first.
-- On-screen display (Direct2D/DirectWrite) for brightness, warmth, scenes and pause, following the light/dark theme.
-- Pause (1 hour / until resumed), panic restore, scene cycling; tray Scenes and Pause menus; `--scene`, `--pause`,
-  `--resume`, `--exit` for the running instance.
-### Fixed
-- A stale instance mutex (hung process) no longer blocks startup forever.
-- D2D/DWrite factories are never released at process exit (avoids a teardown deadlock).
-- Settings persistence (`slc.ini`, atomic writes, saved 1 s after a change) with portable/installed path resolution;
-  per-monitor brightness, hardware share, enable flag and original backlight; schedule, scenes and hotkeys model.
-- Safety net: session flag with crash recovery (neutral gamma + notice), panic hook and unhandled-exception filter.
-- Robustness: re-apply after unlock and resume (re-probing monitors), clean shutdown on sign-out, and a 5 s check that
-  re-applies our ramp when another program overwrites it.
-- Hardware brightness stage: DDC/CI (VCP 0x10, with retry) for external monitors and the display-brightness IOCTL for
-  laptop panels, on a debounced worker thread; SLC adopts each monitor's current backlight on first sight.
-- Gamma writes moved to a worker thread; overlay opacity predicted from the learned bound and corrected on completion.
-- Per-monitor brightness with a master control that keeps relative offsets; `--set brightness=N monitor=M`.
-- `--self-test` reports hardware brightness support and the current level.
-- Overlay dimming stage: per-monitor click-through, topmost, layered black windows, **excluded from screen capture**
-  (`WDA_EXCLUDEFROMCAPTURE`), re-raised on foreground changes, destroyed at 0% so undimmed monitors cost nothing.
-- Pipeline wiring: brightness → gamma (as far as Windows allows) → overlay for the rest; redundant gamma writes skipped.
-- Tray "Brightness" submenu; `slc.exe --set brightness=N kelvin=K` controls the running instance (WM_COPYDATA).
-- Monitor enumeration with friendly names, stable ids, internal-panel and HDR detection (CCD API).
-- Color temperature engine: Kelvin → white point, gamma ramps with a learned Windows range bound and search fallback,
-  warmth-over-dimming priority; hybrid pipeline split math.
-- Tray "Warmth" submenu, `--reset`, and `--self-test` (monitor report + gamma probe with timings).
-- Re-enumerates monitors and re-applies the state after display changes; neutral gamma on exit.
-- Project skeleton: size-optimized Rust build, tray icon (procedural, DPI-aware), context menu, single instance,
-  in-memory log with `--log`, command-line parsing, CI with size budget.
+
+## [1.0.0] - 2026-09-30
+
+First release: the v1.0 core (see `docs/ROADMAP.md`).
+
+### Dimming
+- Hybrid pipeline per display: **hardware backlight** (DDC/CI VCP 0x10 with retry; laptop panel IOCTL) → **gamma**
+  (as far as Windows allows, with a learned per-display bound) → **overlay** for the rest, down to 1%.
+- Overlays are click-through, topmost, destroyed at 0%, and **hidden from screenshots / screen sharing**.
+- Starting SLC never changes the screen: it adopts each display's current backlight; uninstall restores it.
+- Hardware and gamma writes run on worker threads (debounced, latest value wins); the UI never blocks.
+- Per-display brightness with a master control that keeps relative offsets; per-display backlight share and enable.
+
+### Color
+- Warmth 1200K–6500K (f.lux preset names), mixed in mired space.
+- **Automatic schedule**: offline NOAA sunrise/sunset for a city picked from 1,305 embedded cities (or fixed times),
+  wake-time aware, smooth transitions, optional night brightness ceiling, f.lux-style overrides until the next phase.
+- **Darkroom** (red-only, inverted; Magnification color matrix, removed by Windows if SLC dies) and **Movie mode**.
+- Expand color range (elevated) for Windows' gamma limit; HDR displays use backlight + overlay only.
+
+### Interface
+- Tray icon (state glyphs, tooltip, menu, **mouse wheel** for brightness) and a Direct2D **flyout** with brightness,
+  warmth, per-display sliders, scenes and pause.
+- **Settings** window: General, Displays (Identify, Night Light warning), Schedule (city search, 24 h timeline with
+  preview), Scenes, Hotkeys (capture, conflicts), About (diagnostics).
+- Global **hotkeys** (`Win+Alt+…`) and an on-screen display; light/dark theme follows Windows.
+
+### Safety
+- Panic hotkey, 10-second confirmation the first time a display goes below 5%, crash recovery (session flag, panic
+  hook, exception filter), re-apply after unlock / resume / display changes, gamma watchdog.
+
+### Packaging
+- One ~0.7 MB exe with icon, version info and manifest; portable by default; built-in **install / uninstall**
+  (Start menu, Apps & features, autostart; no admin); command line for scripting (`--set`, `--scene`, `--pause`, …).
+- Measured: ~65 ms to tray, ~2.7 MB working set and ~0% CPU when idle.

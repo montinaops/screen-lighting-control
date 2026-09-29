@@ -125,7 +125,8 @@ reboots and port changes for the same physical monitor.
 - `scripts/build.ps1` / `scripts/build.sh`: release build, prints the exe size.
 - **GitHub Actions** (`.github/workflows/ci.yml`): on PR and push, `windows-latest`: `cargo fmt --check`,
   `cargo clippy -D warnings`, `cargo test`, release build, uploads `slc.exe`; fails if the exe is > 1 MB.
-- **Release** (`release.yml`): on tag `v*`, builds and attaches `slc.exe` + SHA-256 to a GitHub Release.
+- **Release** (`release.yml`): on tag `v*`, tests, builds, checks the exe version matches the tag, and publishes
+  `slc.exe` + SHA-256 with the CHANGELOG section as release notes.
 
 ## 7. Testing strategy
 

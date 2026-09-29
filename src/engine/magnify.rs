@@ -28,7 +28,8 @@ pub const DARKROOM: Matrix = [
     1.0, 0.0, 0.0, 0.0, 1.0,
 ];
 
-/// Applies `m` to a color (for tests and previews).
+/// Applies `m` to a color.
+#[cfg(test)]
 pub fn transform(m: &Matrix, rgb: [f32; 3]) -> [f32; 3] {
     let v = [rgb[0], rgb[1], rgb[2], 1.0, 1.0];
     let mut out = [0.0f32; 3];
@@ -74,10 +75,6 @@ impl Magnifier {
             self.current = if ok { m } else { None };
             ok
         }
-    }
-
-    pub fn active(&self) -> bool {
-        self.current.is_some()
     }
 }
 

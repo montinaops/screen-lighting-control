@@ -255,10 +255,6 @@ impl Flyout {
         }
     }
 
-    pub fn hwnd(&self) -> HWND {
-        self.hwnd
-    }
-
     pub fn visible(&self) -> bool {
         unsafe { IsWindowVisible(self.hwnd).as_bool() }
     }

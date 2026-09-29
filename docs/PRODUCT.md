@@ -297,6 +297,7 @@ slc.exe --pause 60                           (roadmap v1.1)
 | Idle CPU | ~0% (no polling except the 5 s gamma check and the 30 s schedule tick) |
 | Memory (idle, flyout closed) | < 10 MB working set |
 | Slider → visible change (gamma/overlay) | < 16 ms |
+| **Measured (v1.0.0)** | 716 KB exe · 65 ms to tray · 2.7 MB working set idle (trimmed after startup) · ~0% CPU |
 | Threads | UI thread + hardware worker (DDC/CI, panel) + gamma worker (`SetDeviceGammaRamp` blocks up to a vsync) |
 
 ---

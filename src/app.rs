@@ -73,6 +73,9 @@ const WM_APP_TRAY_WHEEL: u32 = 0x8000 + 11;
 /// Ends a warmth preview from the settings window.
 const TIMER_PREVIEW: usize = 8;
 const PREVIEW_MS: u32 = 5000;
+/// Trims the working set once things are idle (after startup, and after closing a window).
+const TIMER_TRIM: usize = 9;
+const TRIM_DELAY_MS: u32 = 3000;
 
 /// Periodic housekeeping (pause expiry, schedule).
 const TIMER_TICK: usize = 5;
@@ -285,6 +288,7 @@ impl App {
             let _ = WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
             SetTimer(Some(hwnd), TIMER_GAMMA_CHECK, GAMMA_CHECK_MS, None);
             SetTimer(Some(hwnd), TIMER_TICK, TICK_MS, None);
+            SetTimer(Some(hwnd), TIMER_TRIM, TRIM_DELAY_MS, None);
             app.register_hotkeys();
             if crate::install::night_light_on() {
                 info!("Windows Night Light is on");
@@ -985,7 +989,6 @@ impl App {
                     .to_string(),
                     hdr: s.mon.hdr,
                     gamma_limited: s.gamma_limited && !range_expanded,
-                    brightness: s.brightness,
                 })
                 .collect(),
             settings_path: self.paths.settings.display().to_string(),
@@ -1150,7 +1153,8 @@ impl App {
             }
             Action::Closed => {
                 info!("settings window closed");
-                self.settings_win = None
+                self.settings_win = None;
+                unsafe { SetTimer(Some(self.hwnd), TIMER_TRIM, TRIM_DELAY_MS, None) };
             }
         }
     }
@@ -1489,6 +1493,18 @@ impl App {
             settings_ui::WM_APP_SETTINGS_ACTION => {
                 let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
                 self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_TRIM => {
+                unsafe {
+                    let _ = KillTimer(Some(self.hwnd), TIMER_TRIM);
+                    // Idle tray app: give memory pages back to the system (they return on demand).
+                    let _ = windows::Win32::System::Threading::SetProcessWorkingSetSize(
+                        windows::Win32::System::Threading::GetCurrentProcess(),
+                        usize::MAX,
+                        usize::MAX,
+                    );
+                }
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_PREVIEW => {

@@ -19,7 +19,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 11 | feat: scenes, darkroom, movie | Scenes, Magnification-based Darkroom, Movie mode | ✅ |
 | 12 | feat: install / uninstall | Self-install, Start menu, Run key, uninstall entry | ✅ |
 | 13 | feat: system integration | Night Light / HDR detection, "Expand color range" elevation | ✅ |
-| 14 | release: v1.0.0 | QA checklist, README, release workflow, tag | ⬜ |
+| 14 | release: v1.0.0 | QA checklist, README, release workflow, tag | ✅ |
 
 ## Milestone v1.1 — automation
 - Per-app rules (disable or apply a scene when a given exe is in the foreground; fullscreen detection)

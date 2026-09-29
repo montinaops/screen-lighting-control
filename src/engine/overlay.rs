@@ -141,11 +141,6 @@ impl Overlays {
         self.update_hook();
     }
 
-    /// Current opacity byte of monitor `i` (0 = no overlay).
-    pub fn alpha(&self, i: usize) -> u8 {
-        self.items.get(i).and_then(|o| o.as_ref()).map(|o| o.alpha).unwrap_or(0)
-    }
-
     pub fn hwnds(&self) -> Vec<HWND> {
         self.items.iter().flatten().map(|o| o.hwnd).collect()
     }

@@ -17,7 +17,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 9 | feat: flyout UI | Direct2D flyout with sliders, per-monitor list, scenes, pause | ✅ |
 | 10 | feat: settings window | Pages: General, Displays, Schedule (timeline), Scenes, Hotkeys, About | ✅ |
 | 11 | feat: scenes, darkroom, movie | Scenes, Magnification-based Darkroom, Movie mode | ✅ |
-| 12 | feat: install / uninstall | Self-install, Start menu, Run key, uninstall entry | ⬜ |
+| 12 | feat: install / uninstall | Self-install, Start menu, Run key, uninstall entry | ✅ |
 | 13 | feat: system integration | Night Light / HDR detection, "Expand color range" elevation | ⬜ |
 | 14 | release: v1.0.0 | QA checklist, README, release workflow, tag | ⬜ |
 

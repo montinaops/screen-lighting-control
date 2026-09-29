@@ -200,6 +200,13 @@ unsafe extern "system" fn wheel_hook(code: i32, wp: WPARAM, lp: LPARAM) -> LRESU
     CallNextHookEx(None, code, wp, lp)
 }
 
+/// A program to start after the message loop ends (install / uninstall from the settings window).
+static RELAUNCH: std::sync::Mutex<Option<(std::path::PathBuf, Vec<String>)>> = std::sync::Mutex::new(None);
+
+pub fn take_relaunch() -> Option<(std::path::PathBuf, Vec<String>)> {
+    RELAUNCH.lock().ok()?.take()
+}
+
 fn now_ms() -> u64 {
     unsafe { windows::Win32::System::SystemInformation::GetTickCount64() }
 }
@@ -1102,7 +1109,31 @@ impl App {
                     crate::install::open_folder(dir);
                 }
             }
-            Action::Install | Action::Uninstall | Action::ExpandRange => {
+            Action::Install => {
+                // Close first so the installed copy can take over the single-instance slot.
+                self.save();
+                match crate::install::install() {
+                    Ok(target) => {
+                        *RELAUNCH.lock().unwrap_or_else(|e| e.into_inner()) = Some((target, Vec::new()));
+                        unsafe {
+                            let _ = DestroyWindow(self.hwnd);
+                        }
+                    }
+                    Err(e) => {
+                        crate::install::ask(&format!("Installation failed: {e}"), false);
+                    }
+                }
+            }
+            Action::Uninstall => {
+                if crate::install::ask("Remove Screen Lighting Control from this computer?", true) {
+                    *RELAUNCH.lock().unwrap_or_else(|e| e.into_inner()) =
+                        Some((crate::config::exe_path(), vec!["--uninstall".into(), "--yes".into()]));
+                    unsafe {
+                        let _ = DestroyWindow(self.hwnd);
+                    }
+                }
+            }
+            Action::ExpandRange => {
                 info!("settings action not available yet");
             }
             Action::Closed => {

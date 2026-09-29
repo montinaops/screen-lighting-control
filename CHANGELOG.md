@@ -4,6 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Self-install (`--install` or Settings › Install): copies to `%LOCALAPPDATA%\Programs\SLC`, migrates portable
+  settings, Start menu shortcut, Apps & features entry (with quiet uninstall), autostart; no admin needed.
+- Uninstall (`--uninstall [--quiet]`, Apps & features, or Settings): stops the running instance, restores neutral gamma
+  and each monitor's original backlight, removes shortcut/entries/autostart, optionally deletes settings, and removes
+  the program folder after exiting.
+- The exe now embeds an icon (generated at build time from the tray glyph), version info and an application manifest
+  (per-monitor DPI v2, Common Controls v6, Windows 10+); city search has a placeholder.
 - Darkroom: red-only, luminance-inverted full-screen color matrix (Magnification API) — no gamma range limit, removed by
   Windows automatically if SLC exits or crashes; darkroom tray glyph; hotkey, scene chip and tray menu toggle.
 - Movie mode: 3400K for 2.5 hours regardless of the schedule, then back to automatic; shown in the flyout and menu.

@@ -25,10 +25,14 @@ pub struct Cli {
     pub log_file: Option<String>,
     /// `--minimized`: started by autostart; don't show anything but the tray icon.
     pub minimized: bool,
+    /// `--quiet`: no dialogs (uninstall keeps settings).
+    pub quiet: bool,
+    /// `--yes`: the user already confirmed (uninstall started from the settings window).
+    pub yes: bool,
 }
 
 pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
-    let mut cli = Cli { command: Command::Run, log_file: None, minimized: false };
+    let mut cli = Cli { command: Command::Run, log_file: None, minimized: false, quiet: false, yes: false };
     let mut it = args.into_iter();
     let mut forward: Vec<String> = Vec::new();
     while let Some(a) = it.next() {
@@ -49,6 +53,8 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
             "-h" | "--help" | "/?" => set(&mut cli, Command::Help)?,
             "-v" | "--version" => set(&mut cli, Command::Version)?,
             "--minimized" => cli.minimized = true,
+            "--quiet" => cli.quiet = true,
+            "--yes" => cli.yes = true,
             "--log" => {
                 cli.log_file = Some(it.next().ok_or("--log needs a file path")?);
             }

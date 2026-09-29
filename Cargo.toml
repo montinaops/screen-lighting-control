@@ -5,10 +5,14 @@ edition = "2021"
 description = "Screen Lighting Control — tiny Windows screen dimmer and color temperature controller"
 license = "LicenseRef-Proprietary"
 publish = false
+build = "build.rs"
 
 [[bin]]
 name = "slc"
 path = "src/main.rs"
+
+[build-dependencies]
+embed-resource = "3"
 
 [dependencies.windows]
 version = "0.62"
@@ -23,6 +27,7 @@ features = [
     "Win32_Graphics_Gdi",
     "Win32_Security",
     "Win32_Storage_FileSystem",
+    "Win32_System_Com",
     "Win32_System_Console",
     "Win32_System_IO",
     "Win32_System_DataExchange",

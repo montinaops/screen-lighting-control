@@ -7,6 +7,11 @@
 | CI and releases (GitHub Actions, `windows-latest`) | `x86_64-pc-windows-msvc` | MSVC `link.exe` (static CRT via `.cargo/config.toml`) |
 | Local dev without Visual Studio | `x86_64-pc-windows-gnullvm` | [llvm-mingw](https://github.com/mstorsjo/llvm-mingw) (`clang` as the linker, `llvm-dlltool` for raw-dylib imports) |
 
+`build.rs` embeds the icon, manifest and version info with `embed-resource`: MSVC uses `rc.exe` from the Windows SDK;
+the GNU-flavored local build needs `windres` + `clang` on PATH — `scripts/cargo.sh` exposes a minimal
+`%USERPROFILE%\.slc-tools\rcbin` (llvm-mingw's `x86_64-w64-mingw32-windres.exe` renamed to `windres.exe`, plus
+`clang.exe`, `clang-23.exe` and the LLVM DLLs). Putting all of llvm-mingw on PATH breaks host build scripts.
+
 The `windows` crate links Win32 APIs with `raw-dylib`, so GNU-flavored targets need a `dlltool`. The classic
 `x86_64-pc-windows-gnu` target combined with `llvm-dlltool` produces broken binaries, so use `gnullvm` with llvm-mingw.
 

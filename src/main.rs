@@ -9,6 +9,7 @@ mod cli;
 mod color;
 mod config;
 mod engine;
+mod glyph;
 mod hotkeys;
 mod icon;
 mod install;
@@ -62,6 +63,14 @@ fn main() {
             let n = engine::reset_all(&monitors::enumerate());
             println!("SLC: reset {n} monitor(s)");
             0
+        }
+        Command::Install => {
+            console();
+            cmd_install()
+        }
+        Command::Uninstall => {
+            console();
+            cmd_uninstall(cli.quiet, cli.yes)
         }
         Command::Forward(line) => {
             console();
@@ -122,7 +131,74 @@ fn run() -> i32 {
     let code = app::run_loop();
     drop(app);
     info!("exit {code}");
+    if let Some((exe, args)) = app::take_relaunch() {
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        info!("relaunching {} {:?}", exe.display(), args);
+        install::launch(&exe, &args);
+    }
     code
+}
+
+/// Asks a running instance to exit and waits (up to 3 s) for it to go away.
+fn stop_running_instance() -> bool {
+    let Ok(hwnd) = (unsafe { FindWindowW(win::CONTROLLER_CLASS, None) }) else { return false };
+    forward("--exit");
+    for _ in 0..30 {
+        if unsafe { windows::Win32::UI::WindowsAndMessaging::IsWindow(Some(hwnd)) }.as_bool() {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        } else {
+            break;
+        }
+    }
+    true
+}
+
+fn cmd_install() -> i32 {
+    stop_running_instance();
+    match install::install() {
+        Ok(target) => {
+            println!("SLC: installed to {}", target.display());
+            install::launch(&target, &[]);
+            0
+        }
+        Err(e) => {
+            eprintln!("slc: install failed: {e}");
+            install::ask(&format!("Installation failed: {e}"), false);
+            1
+        }
+    }
+}
+
+fn cmd_uninstall(quiet: bool, confirmed: bool) -> i32 {
+    if !quiet && !confirmed && !install::ask("Remove Screen Lighting Control from this computer?", true) {
+        return 1;
+    }
+    stop_running_instance();
+    // Put the screens back the way they were before SLC.
+    let mons = monitors::enumerate();
+    engine::reset_all(&mons);
+    let settings = config::Ini::load(&config::resolve().settings).map(|i| model::Settings::from_ini(&i));
+    if let Some(s) = &settings {
+        for m in &mons {
+            if let Some(level) = s.monitor(&monitors::settings_key(&m.id)).and_then(|ms| ms.original_hw) {
+                engine::hardware::write(m.hmon, m.internal, level);
+            }
+        }
+    }
+    let remove_settings = !quiet && install::ask("Also delete your SLC settings?", true);
+    match install::uninstall(remove_settings) {
+        Ok(()) => {
+            println!("SLC: uninstalled");
+            if !quiet {
+                install::ask("Screen Lighting Control was removed.", false);
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("slc: uninstall failed: {e}");
+            1
+        }
+    }
 }
 
 /// Sends a request line to the running instance (WM_COPYDATA).

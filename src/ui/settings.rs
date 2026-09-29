@@ -743,6 +743,7 @@ impl SettingsWindow {
         for (id, r) in wanted {
             let inner = r.inset(10.0, 7.0);
             let visible = r.y >= 0.0 && r.bottom() <= h;
+            let is_new = !self.edits.iter().any(|(e, _)| *e == id);
             let hwnd = match self.edits.iter().find(|(e, _)| *e == id) {
                 Some((_, h)) => *h,
                 None => unsafe {
@@ -767,6 +768,11 @@ impl SettingsWindow {
                 },
             };
             unsafe {
+                if is_new && id == Id::CityEdit {
+                    // EM_SETCUEBANNER (Common Controls v6, enabled by the manifest).
+                    let cue = win::wide("Search for a city…");
+                    SendMessageW(hwnd, 0x1501, Some(WPARAM(1)), Some(LPARAM(cue.as_ptr() as isize)));
+                }
                 SendMessageW(hwnd, WM_SETFONT, Some(WPARAM(self.font.0 as usize)), Some(LPARAM(1)));
                 let _ = SetWindowPos(
                     hwnd,

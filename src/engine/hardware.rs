@@ -234,6 +234,17 @@ pub fn read(hmon: HMONITOR, internal: bool) -> Option<Caps> {
     c
 }
 
+/// Synchronously sets one monitor's backlight (used by uninstall to restore the original level).
+pub fn write(hmon: HMONITOR, internal: bool, level: f32) -> bool {
+    let mut d = match probe_ddc(hmon) {
+        Device::None if internal => probe_panel(),
+        d => d,
+    };
+    let ok = d.set(level);
+    d.close();
+    ok
+}
+
 enum Job {
     /// Re-detect devices for a new monitor list: (HMONITOR as isize, internal panel).
     Probe {

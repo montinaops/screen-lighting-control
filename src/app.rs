@@ -2,6 +2,7 @@
 
 use crate::color;
 use crate::config::{Ini, Paths};
+use crate::engine::magnify::Filter;
 use crate::engine::{self, gamma, hardware, overlay::Overlays, Event, Events};
 use crate::foreground;
 use crate::hotkeys;
@@ -39,7 +40,8 @@ const CMD_PAUSE_FOREVER: u32 = 4;
 const CMD_RESUME: u32 = 5;
 const CMD_SCHEDULE_TOGGLE: u32 = 6;
 const CMD_SCHEDULE_RESUME: u32 = 7;
-const CMD_DARKROOM: u32 = 8;
+/// Color filters: CMD_FILTER_BASE + index into `Filter::ALL`.
+const CMD_FILTER_BASE: u32 = 400;
 const CMD_MOVIE: u32 = 9;
 /// Movie mode length (PRODUCT §5.4).
 const MOVIE_MINUTES: u64 = 150;
@@ -187,7 +189,8 @@ pub struct App {
     /// Global hotkeys are suspended while the settings window captures a new shortcut.
     capturing: bool,
     magnifier: engine::magnify::Magnifier,
-    darkroom: bool,
+    /// Full-screen color filter (Darkroom, Grayscale, Amber, Red).
+    filter: Filter,
     /// Movie mode: (end tick, warmth).
     movie: Option<(u64, u32)>,
     watcher: foreground::Watcher,
@@ -225,6 +228,17 @@ static RELAUNCH: std::sync::Mutex<Option<(std::path::PathBuf, Vec<String>)>> = s
 
 pub fn take_relaunch() -> Option<(std::path::PathBuf, Vec<String>)> {
     RELAUNCH.lock().ok()?.take()
+}
+
+/// The color filter a scene effect turns on (`Filter::None` for other effects).
+fn scene_filter(e: SceneEffect) -> Filter {
+    match e {
+        SceneEffect::Darkroom => Filter::Darkroom,
+        SceneEffect::Grayscale => Filter::Grayscale,
+        SceneEffect::Amber => Filter::Amber,
+        SceneEffect::Red => Filter::Red,
+        SceneEffect::None | SceneEffect::Movie => Filter::None,
+    }
 }
 
 fn rule_text(a: &RuleAction) -> String {
@@ -282,7 +296,7 @@ impl App {
                 preview_k: None,
                 capturing: false,
                 magnifier: Default::default(),
-                darkroom: false,
+                filter: Filter::None,
                 movie: None,
                 watcher: Default::default(),
                 rule: None,
@@ -521,11 +535,12 @@ impl App {
         if !self.hotkey_conflicts.is_empty() {
             tip.push_str(&format!("\nHotkey in use: {}", self.hotkey_conflicts.join(", ")));
         }
-        let dark = self.darkroom && !paused;
-        if !self.magnifier.set(dark.then_some(engine::magnify::DARKROOM)) && dark {
-            self.darkroom = false;
+        let dark = self.filter != Filter::None && !paused;
+        if !self.magnifier.set(if paused { None } else { self.filter.matrix() }) && dark {
+            let name = self.filter.name();
+            self.filter = Filter::None;
             self.show_osd(osd::Content::Message(
-                "Darkroom unavailable".into(),
+                format!("{name} unavailable"),
                 "Windows refused the color filter".into(),
             ));
         }
@@ -839,17 +854,18 @@ impl App {
             self.set_kelvin(k);
         }
         match scene.effect {
-            SceneEffect::Darkroom => {
-                self.darkroom = !self.darkroom;
-                info!("darkroom {}", if self.darkroom { "on" } else { "off" });
-            }
             SceneEffect::Movie => self.start_movie(scene.kelvin.unwrap_or(MOVIE_DEFAULT_K)),
-            SceneEffect::None => self.darkroom = false,
+            SceneEffect::None => self.filter = Filter::None,
+            e => {
+                let f = scene_filter(e);
+                self.filter = if self.filter == f { Filter::None } else { f };
+                info!("color filter: {:?}", self.filter);
+            }
         }
         self.commit();
         let sub = match scene.effect {
-            SceneEffect::Darkroom => {
-                if self.darkroom {
+            SceneEffect::Darkroom | SceneEffect::Grayscale | SceneEffect::Amber | SceneEffect::Red => {
+                if self.filter == scene_filter(scene.effect) {
                     "On".to_string()
                 } else {
                     "Off".to_string()
@@ -919,7 +935,7 @@ impl App {
     fn panic(&mut self) {
         info!("panic restore");
         self.paused_until = None;
-        self.darkroom = false;
+        self.filter = Filter::None;
         self.movie = None;
         self.set_master(engine::MAX_BRIGHTNESS);
         self.set_kelvin(color::NEUTRAL_KELVIN);
@@ -947,8 +963,8 @@ impl App {
             format!("Rule for {exe}: {}", rule_text(action))
         } else if self.fullscreen {
             "Paused while a fullscreen app is active".to_string()
-        } else if self.darkroom {
-            "Darkroom is on · tap Darkroom again to turn it off".to_string()
+        } else if self.filter != Filter::None {
+            format!("{} is on · tap it again to turn it off", self.filter.name())
         } else if let Some((until, k)) = self.movie {
             let mins = until.saturating_sub(now_ms()) / 60_000;
             format!("Movie mode · {k}K for {} h {:02} min more", mins / 60, mins % 60)
@@ -978,8 +994,8 @@ impl App {
                 })
                 .collect(),
             scenes: self.settings.scenes.iter().map(|s| s.name.clone()).collect(),
-            active_scene: if self.darkroom {
-                self.settings.scenes.iter().position(|s| s.effect == SceneEffect::Darkroom)
+            active_scene: if self.filter != Filter::None {
+                self.settings.scenes.iter().position(|s| scene_filter(s.effect) == self.filter)
             } else {
                 self.active_scene
             },
@@ -1485,7 +1501,14 @@ impl App {
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
             MenuItem::Sub { text: "Scenes".into(), items: scenes },
             MenuItem::check(CMD_SCHEDULE_TOGGLE, "Automatic schedule", self.settings.schedule.enabled),
-            MenuItem::check(CMD_DARKROOM, "Darkroom", self.darkroom),
+            MenuItem::Sub {
+                text: "Color filter".into(),
+                items: Filter::ALL
+                    .iter()
+                    .enumerate()
+                    .map(|(i, f)| MenuItem::check(CMD_FILTER_BASE + i as u32, f.name(), self.filter == *f))
+                    .collect(),
+            },
             MenuItem::check(CMD_MOVIE, "Movie mode (2.5 h)", self.movie.is_some()),
         ];
         let mut items = items;
@@ -1512,9 +1535,9 @@ impl App {
                 self.update_schedule(true);
                 self.commit();
             }
-            CMD_DARKROOM => {
+            c if (CMD_FILTER_BASE..CMD_FILTER_BASE + Filter::ALL.len() as u32).contains(&c) => {
                 self.resume_if_paused();
-                self.darkroom = !self.darkroom;
+                self.filter = Filter::ALL[(c - CMD_FILTER_BASE) as usize];
                 self.apply();
             }
             CMD_MOVIE => {
@@ -1568,6 +1591,18 @@ impl App {
                 }
                 crate::cli::Request::Pause(m) => self.pause((m > 0).then_some(m as u64)),
                 crate::cli::Request::Resume => self.resume(),
+                crate::cli::Request::Filter(name) => {
+                    match Filter::ALL.iter().find(|f| {
+                        f.name().to_ascii_lowercase().starts_with(&name)
+                            || format!("{f:?}").eq_ignore_ascii_case(&name)
+                    }) {
+                        Some(f) => {
+                            self.resume_if_paused();
+                            self.filter = *f;
+                        }
+                        None => return false,
+                    }
+                }
                 crate::cli::Request::Settings(page) => {
                     self.open_settings();
                     if let (Some(p), Some(w)) =
@@ -1593,7 +1628,7 @@ impl App {
     fn reset(&mut self) {
         info!("reset requested");
         self.paused_until = None;
-        self.darkroom = false;
+        self.filter = Filter::None;
         self.movie = None;
         self.set_kelvin(color::NEUTRAL_KELVIN);
         self.set_master(engine::MAX_BRIGHTNESS);

@@ -4,6 +4,11 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Color filters: Grayscale, Amber night (low blue light without an orange cast) and Red night, alongside Darkroom —
+  tray "Color filter" menu, scene effects (editable in Settings › Scenes), `--filter <name>`. All use the crash-safe
+  Magnification matrix.
+
 ## [1.1.0] - 2026-09-30
 
 Milestone v1.1: automation.

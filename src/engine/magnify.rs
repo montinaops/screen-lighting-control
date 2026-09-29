@@ -28,6 +28,81 @@ pub const DARKROOM: Matrix = [
     1.0, 0.0, 0.0, 0.0, 1.0,
 ];
 
+/// Luminance-based tint: every pixel becomes its luminance times `(r, g, b)`.
+const fn tint(r: f32, g: f32, b: f32) -> Matrix {
+    const LR: f32 = 0.2126;
+    const LG: f32 = 0.7152;
+    const LB: f32 = 0.0722;
+    [
+        LR * r,
+        LR * g,
+        LR * b,
+        0.0,
+        0.0, //
+        LG * r,
+        LG * g,
+        LG * b,
+        0.0,
+        0.0, //
+        LB * r,
+        LB * g,
+        LB * b,
+        0.0,
+        0.0, //
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0, //
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    ]
+}
+
+pub const GRAYSCALE: Matrix = tint(1.0, 1.0, 1.0);
+/// Low blue light without the orange cast of a very low color temperature.
+pub const AMBER: Matrix = tint(1.0, 0.62, 0.12);
+/// Red only (not inverted): the least alerting light that still looks like the normal screen.
+pub const RED: Matrix = tint(1.0, 0.0, 0.0);
+
+/// Full-screen color filters.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Filter {
+    None,
+    Darkroom,
+    Grayscale,
+    Amber,
+    Red,
+}
+
+impl Filter {
+    pub const ALL: [Filter; 5] =
+        [Filter::None, Filter::Darkroom, Filter::Grayscale, Filter::Amber, Filter::Red];
+
+    pub fn matrix(self) -> Option<Matrix> {
+        match self {
+            Filter::None => None,
+            Filter::Darkroom => Some(DARKROOM),
+            Filter::Grayscale => Some(GRAYSCALE),
+            Filter::Amber => Some(AMBER),
+            Filter::Red => Some(RED),
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Filter::None => "None",
+            Filter::Darkroom => "Darkroom",
+            Filter::Grayscale => "Grayscale",
+            Filter::Amber => "Amber night",
+            Filter::Red => "Red night",
+        }
+    }
+}
+
 /// Applies `m` to a color.
 #[cfg(test)]
 pub fn transform(m: &Matrix, rgb: [f32; 3]) -> [f32; 3] {
@@ -96,6 +171,18 @@ mod tests {
         assert_eq!(black, [1.0, 0.0, 0.0], "black background becomes red");
         let blue = transform(&DARKROOM, [0.0, 0.0, 1.0]);
         assert_eq!((blue[1], blue[2]), (0.0, 0.0));
+    }
+
+    #[test]
+    fn tints_follow_luminance() {
+        let white = transform(&GRAYSCALE, [1.0, 1.0, 1.0]);
+        assert!(white.iter().all(|c| (c - 1.0).abs() < 1e-4));
+        let amber = transform(&AMBER, [1.0, 1.0, 1.0]);
+        assert!(amber[0] > amber[1] && amber[1] > amber[2]);
+        let red = transform(&RED, [0.5, 0.5, 0.5]);
+        assert_eq!((red[1], red[2]), (0.0, 0.0));
+        assert!((red[0] - 0.5).abs() < 1e-4);
+        assert_eq!(Filter::None.matrix(), None);
     }
 
     #[test]

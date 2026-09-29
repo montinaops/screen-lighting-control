@@ -134,6 +134,7 @@ enum Id {
     SceneBright,
     SceneKelvin,
     SceneHotkey,
+    SceneEffect,
     SceneAdd,
     SceneDelete,
     Hotkey(usize),
@@ -643,6 +644,19 @@ impl SettingsWindow {
                 sc.kelvin.map(fmt_k).unwrap_or("—".into()),
                 true,
             );
+            let effect = match sc.effect {
+                model::SceneEffect::None => "None",
+                model::SceneEffect::Movie => "Movie mode",
+                model::SceneEffect::Darkroom => "Darkroom",
+                model::SceneEffect::Grayscale => "Grayscale",
+                model::SceneEffect::Amber => "Amber night",
+                model::SceneEffect::Red => "Red night",
+            };
+            b.row(
+                "Effect",
+                "Click to change: Movie mode, or a color filter (Darkroom, Grayscale, Amber night, Red night).",
+                vec![(Some(Id::SceneEffect), 160.0, 32.0, Kind::Button(effect.into(), false))],
+            );
             let capturing = self.local.capture == Some(Id::SceneHotkey);
             b.row(
                 "Hotkey",
@@ -1083,6 +1097,23 @@ impl SettingsWindow {
                         }
                     });
                     self.destroy_edits();
+                }
+            }
+            Id::SceneEffect => {
+                if let Some(i) = self.local.selected_scene {
+                    self.edit(move |s| {
+                        if let Some(sc) = s.scenes.get_mut(i) {
+                            use model::SceneEffect as E;
+                            sc.effect = match sc.effect {
+                                E::None => E::Movie,
+                                E::Movie => E::Darkroom,
+                                E::Darkroom => E::Grayscale,
+                                E::Grayscale => E::Amber,
+                                E::Amber => E::Red,
+                                E::Red => E::None,
+                            };
+                        }
+                    });
                 }
             }
             Id::SceneHotkey | Id::Hotkey(_) => self.begin_capture(id),

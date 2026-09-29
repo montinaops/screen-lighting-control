@@ -99,6 +99,9 @@ pub enum SceneEffect {
     None,
     Darkroom,
     Movie,
+    Grayscale,
+    Amber,
+    Red,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -341,6 +344,9 @@ impl Settings {
                         kelvin: ini.get_parse::<i64>(&sec, "kelvin").map(color::clamp_kelvin),
                         effect: match ini.get(&sec, "effect").unwrap_or("").to_ascii_lowercase().as_str() {
                             "darkroom" => SceneEffect::Darkroom,
+                            "grayscale" => SceneEffect::Grayscale,
+                            "amber" => SceneEffect::Amber,
+                            "red" => SceneEffect::Red,
                             "movie" => SceneEffect::Movie,
                             _ => SceneEffect::None,
                         },
@@ -436,6 +442,9 @@ impl Settings {
             }
             match sc.effect {
                 SceneEffect::Darkroom => ini.set(&sec, "effect", "darkroom"),
+                SceneEffect::Grayscale => ini.set(&sec, "effect", "grayscale"),
+                SceneEffect::Amber => ini.set(&sec, "effect", "amber"),
+                SceneEffect::Red => ini.set(&sec, "effect", "red"),
                 SceneEffect::Movie => ini.set(&sec, "effect", "movie"),
                 SceneEffect::None => {}
             }

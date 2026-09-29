@@ -28,7 +28,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 
 ## Milestone v1.2 — comfort
 - Wind-down reminders, 20-20-20 break reminders (toast/OSD)
-- Grayscale and amber night modes (color matrix)
+- ✅ Color filters: Grayscale, Amber night, Red night (plus Darkroom) — #18
 - Software cursor option (so the cursor is dimmed too)
 
 ## Milestone v1.3 — integrations

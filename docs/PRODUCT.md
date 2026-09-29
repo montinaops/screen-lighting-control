@@ -145,7 +145,9 @@ Windows rejects gamma ramps that differ "too much" from identity unless the regi
 |---|---|
 | **Darkroom** | Red only, inverted (like f.lux). Uses the Windows Magnification API's full-screen color matrix (`MagSetFullscreenColorEffect`), which has no range limit and is **removed automatically by Windows if SLC exits or crashes**. |
 | **Movie** | 2.5 hours at a moderate warmth (3400K) that keeps skin tones, then returns to the schedule. |
-| **Grayscale night** (roadmap) | Grayscale with warm tint, via the color matrix. |
+| **Grayscale** | Luminance only (no color at all). |
+| **Amber night** | Luminance tinted (1, 0.62, 0.12): very little blue light, without the orange cast of 1200K. |
+| **Red night** | Luminance in red only (not inverted). |
 
 ---
 

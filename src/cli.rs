@@ -64,7 +64,7 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
                     forward.push(page);
                 }
             }
-            "--set" | "--scene" | "--pause" | "--resume" | "--exit" => {
+            "--set" | "--scene" | "--pause" | "--resume" | "--exit" | "--filter" => {
                 forward.push(a_l.clone());
                 if a_l != "--resume" && a_l != "--exit" {
                     let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
@@ -100,6 +100,8 @@ pub enum Request {
     Exit,
     /// Open the settings window (optionally on a page).
     Settings(Option<String>),
+    /// Full-screen color filter: none, darkroom, grayscale, amber, red.
+    Filter(String),
 }
 
 /// Parses the forwarded command line (e.g. `--set brightness=40 monitor=2 kelvin=3400`).
@@ -141,6 +143,9 @@ pub fn parse_forward(s: &str) -> Result<Vec<Request>, String> {
             )),
             "--resume" => out.push(Request::Resume),
             "--exit" => out.push(Request::Exit),
+            "--filter" => {
+                out.push(Request::Filter(words.next().ok_or("--filter needs a name")?.to_ascii_lowercase()))
+            }
             "--settings" => {
                 out.push(Request::Settings(words.next_if(|n| !n.starts_with("--")).map(str::to_string)))
             }
@@ -163,6 +168,7 @@ Usage:
   slc.exe --scene <name>         apply a scene in the running instance
   slc.exe --pause <minutes>      pause the running instance (0 = until resumed)
   slc.exe --resume
+  slc.exe --filter <name>        none, darkroom, grayscale, amber or red
   slc.exe --settings [page]      open settings (general, displays, schedule, scenes, hotkeys, about)
   slc.exe --exit                 close the running instance (restores the screens)
   slc.exe --log <file>           write a diagnostic log

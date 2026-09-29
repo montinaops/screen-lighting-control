@@ -2,7 +2,7 @@
 
 Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress · ✅ merged.
 
-## Milestone v1.0 — core
+## Milestone v1.0 — core ✅ (released 1.0.0)
 
 | # | PR | Scope | Status |
 |---|---|---|---|
@@ -21,7 +21,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | 13 | feat: system integration | Night Light / HDR detection, "Expand color range" elevation | ✅ |
 | 14 | release: v1.0.0 | QA checklist, README, release workflow, tag | ✅ |
 
-## Milestone v1.1 — automation
+## Milestone v1.1 — automation ✅ (released 1.1.0)
 - ✅ Per-app rules (off / no overlay / scene while an app is in front) and pause in fullscreen apps — #15
 - ✅ CLI control of the running instance (`--set`, `--scene`, `--pause`, `--resume`, `--settings`, `--exit`) via `WM_COPYDATA` — shipped in v1.0
 - ✅ Idle fade (dim after N minutes without input, restore on input; skipped while audio plays or an app is fullscreen) — #16

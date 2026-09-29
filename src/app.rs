@@ -38,6 +38,11 @@ const CMD_PAUSE_FOREVER: u32 = 4;
 const CMD_RESUME: u32 = 5;
 const CMD_SCHEDULE_TOGGLE: u32 = 6;
 const CMD_SCHEDULE_RESUME: u32 = 7;
+const CMD_DARKROOM: u32 = 8;
+const CMD_MOVIE: u32 = 9;
+/// Movie mode length (PRODUCT §5.4).
+const MOVIE_MINUTES: u64 = 150;
+const MOVIE_DEFAULT_K: u32 = 3400;
 /// Schedule-driven warmth changes smaller than this are skipped (invisible, saves gamma writes).
 const SCHEDULE_MIN_STEP_K: u32 = 25;
 
@@ -170,6 +175,10 @@ pub struct App {
     preview_k: Option<u32>,
     /// Global hotkeys are suspended while the settings window captures a new shortcut.
     capturing: bool,
+    magnifier: engine::magnify::Magnifier,
+    darkroom: bool,
+    /// Movie mode: (end tick, warmth).
+    movie: Option<(u64, u32)>,
 }
 
 thread_local! {
@@ -237,6 +246,9 @@ impl App {
                 settings_win: None,
                 preview_k: None,
                 capturing: false,
+                magnifier: Default::default(),
+                darkroom: false,
+                movie: None,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -442,9 +454,23 @@ impl App {
         if !self.hotkey_conflicts.is_empty() {
             tip.push_str(&format!("\nHotkey in use: {}", self.hotkey_conflicts.join(", ")));
         }
+        let dark = self.darkroom && !paused;
+        if !self.magnifier.set(dark.then_some(engine::magnify::DARKROOM)) && dark {
+            self.darkroom = false;
+            self.show_osd(osd::Content::Message(
+                "Darkroom unavailable".into(),
+                "Windows refused the color filter".into(),
+            ));
+        }
         if let Some(t) = self.tray.as_mut() {
             t.set_tip(&tip);
-            t.set_glyph(if paused { crate::icon::Glyph::Paused } else { crate::icon::Glyph::Normal });
+            t.set_glyph(if paused {
+                crate::icon::Glyph::Paused
+            } else if dark {
+                crate::icon::Glyph::Darkroom
+            } else {
+                crate::icon::Glyph::Normal
+            });
         }
         self.update_flyout();
         self.update_settings_window();
@@ -523,6 +549,7 @@ impl App {
                 let _ = UnhookWindowsHookEx(h);
             }
         }
+        self.magnifier.set(None);
         self.osd = None;
         self.flyout = None;
         self.settings_win = None;
@@ -619,6 +646,7 @@ impl App {
 
     /// A manual warmth change. With the schedule on it becomes an override until the next phase.
     fn set_kelvin(&mut self, k: u32) {
+        self.movie = None;
         self.kelvin = k;
         self.settings.kelvin = k;
         if self.settings.schedule.enabled {
@@ -630,6 +658,18 @@ impl App {
 
     /// Follows the schedule (called on the tick). Returns true if something visible changed.
     fn update_schedule(&mut self, force: bool) -> bool {
+        if let Some((until, k)) = self.movie {
+            if now_ms() < until {
+                let changed = self.kelvin != k;
+                self.kelvin = k;
+                return changed;
+            }
+            info!("movie mode ended");
+            self.movie = None;
+            if self.settings.schedule.enabled {
+                self.override_k = None;
+            }
+        }
         let sc = &self.settings.schedule;
         if !sc.enabled {
             self.override_k = None;
@@ -675,23 +715,58 @@ impl App {
         if let Some(b) = scene.brightness {
             self.set_master(b);
         }
-        if let Some(k) = scene.kelvin {
+        if let (Some(k), false) = (scene.kelvin, scene.effect == SceneEffect::Movie) {
+            self.stop_movie();
             self.set_kelvin(k);
         }
-        if scene.effect != SceneEffect::None {
-            info!("scene effect {:?} not available yet", scene.effect);
+        match scene.effect {
+            SceneEffect::Darkroom => {
+                self.darkroom = !self.darkroom;
+                info!("darkroom {}", if self.darkroom { "on" } else { "off" });
+            }
+            SceneEffect::Movie => self.start_movie(scene.kelvin.unwrap_or(MOVIE_DEFAULT_K)),
+            SceneEffect::None => self.darkroom = false,
         }
         self.commit();
-        let sub = match (scene.brightness, scene.kelvin) {
-            (Some(b), Some(k)) => format!("{b:.0}% · {k}K"),
-            (None, Some(k)) => format!("{k}K"),
-            (Some(b), None) => format!("{b:.0}%"),
-            (None, None) => String::new(),
+        let sub = match scene.effect {
+            SceneEffect::Darkroom => {
+                if self.darkroom {
+                    "On".to_string()
+                } else {
+                    "Off".to_string()
+                }
+            }
+            SceneEffect::Movie => {
+                format!("{}K for {} h {} min", self.kelvin, MOVIE_MINUTES / 60, MOVIE_MINUTES % 60)
+            }
+            SceneEffect::None => String::new(),
+        };
+        let sub = if !sub.is_empty() {
+            sub
+        } else {
+            match (scene.brightness, scene.kelvin) {
+                (Some(b), Some(k)) => format!("{b:.0}% · {k}K"),
+                (None, Some(k)) => format!("{k}K"),
+                (Some(b), None) => format!("{b:.0}%"),
+                (None, None) => String::new(),
+            }
         };
         if !self.flyout.as_ref().is_some_and(|f| f.visible()) {
             self.show_osd(osd::Content::Message(scene.name, sub));
         }
         self.check_deep_dim();
+    }
+
+    fn start_movie(&mut self, k: u32) {
+        self.movie = Some((now_ms() + MOVIE_MINUTES * 60_000, k));
+        self.kelvin = k;
+        info!("movie mode {k}K for {MOVIE_MINUTES} min");
+    }
+
+    fn stop_movie(&mut self) {
+        if self.movie.take().is_some() {
+            self.update_schedule(true);
+        }
     }
 
     /// Pauses all effects for `minutes` (None = until resumed).
@@ -725,6 +800,8 @@ impl App {
     fn panic(&mut self) {
         info!("panic restore");
         self.paused_until = None;
+        self.darkroom = false;
+        self.movie = None;
         self.set_master(engine::MAX_BRIGHTNESS);
         self.set_kelvin(color::NEUTRAL_KELVIN);
         self.invalidate();
@@ -747,7 +824,12 @@ impl App {
 
     fn flyout_state(&self) -> flyout::State {
         let sc = &self.settings.schedule;
-        let schedule_text = if !sc.enabled {
+        let schedule_text = if self.darkroom {
+            "Darkroom is on · tap Darkroom again to turn it off".to_string()
+        } else if let Some((until, k)) = self.movie {
+            let mins = until.saturating_sub(now_ms()) / 60_000;
+            format!("Movie mode · {k}K for {} h {:02} min more", mins / 60, mins % 60)
+        } else if !sc.enabled {
             "Manual warmth · schedule off".to_string()
         } else if let Some((_, phase)) = self.override_k {
             format!("Manual until the {} ends", format!("{phase:?}").to_lowercase())
@@ -773,7 +855,11 @@ impl App {
                 })
                 .collect(),
             scenes: self.settings.scenes.iter().map(|s| s.name.clone()).collect(),
-            active_scene: self.active_scene,
+            active_scene: if self.darkroom {
+                self.settings.scenes.iter().position(|s| s.effect == SceneEffect::Darkroom)
+            } else {
+                self.active_scene
+            },
             paused: self.paused_until.is_some(),
             schedule_text,
             overriding: self.override_k.is_some(),
@@ -1201,6 +1287,8 @@ impl App {
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
             MenuItem::Sub { text: "Scenes".into(), items: scenes },
             MenuItem::check(CMD_SCHEDULE_TOGGLE, "Automatic schedule", self.settings.schedule.enabled),
+            MenuItem::check(CMD_DARKROOM, "Darkroom", self.darkroom),
+            MenuItem::check(CMD_MOVIE, "Movie mode (2.5 h)", self.movie.is_some()),
         ];
         let mut items = items;
         if self.override_k.is_some() {
@@ -1225,6 +1313,19 @@ impl App {
                 self.settings.schedule.enabled = !self.settings.schedule.enabled;
                 self.update_schedule(true);
                 self.commit();
+            }
+            CMD_DARKROOM => {
+                self.resume_if_paused();
+                self.darkroom = !self.darkroom;
+                self.apply();
+            }
+            CMD_MOVIE => {
+                if self.movie.is_some() {
+                    self.stop_movie();
+                } else {
+                    self.start_movie(MOVIE_DEFAULT_K);
+                }
+                self.apply();
             }
             CMD_SCHEDULE_RESUME => {
                 self.override_k = None;
@@ -1294,6 +1395,8 @@ impl App {
     fn reset(&mut self) {
         info!("reset requested");
         self.paused_until = None;
+        self.darkroom = false;
+        self.movie = None;
         self.set_kelvin(color::NEUTRAL_KELVIN);
         self.set_master(engine::MAX_BRIGHTNESS);
         self.invalidate();

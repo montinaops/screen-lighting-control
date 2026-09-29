@@ -4,6 +4,9 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Darkroom: red-only, luminance-inverted full-screen color matrix (Magnification API) — no gamma range limit, removed by
+  Windows automatically if SLC exits or crashes; darkroom tray glyph; hotkey, scene chip and tray menu toggle.
+- Movie mode: 3400K for 2.5 hours regardless of the schedule, then back to automatic; shown in the flyout and menu.
 - Settings window (Direct2D, dark title bar, DPI-aware, scrollable) with six pages: General (autostart, OSD, theme),
   Displays (per-display enable, backlight share, method/HDR/limit info, Night Light warning, Identify), Schedule
   (offline city search, sun/fixed timing, wake time, day/evening/night colors, transitions, night brightness,

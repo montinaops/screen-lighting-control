@@ -3,6 +3,7 @@
 
 pub mod gamma;
 pub mod hardware;
+pub mod magnify;
 pub mod overlay;
 
 use crate::info;

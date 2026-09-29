@@ -2,6 +2,7 @@
 //! into a hardware level, a gamma scale and an overlay opacity.
 
 pub mod gamma;
+pub mod overlay;
 
 use crate::info;
 use crate::monitors::Monitor;

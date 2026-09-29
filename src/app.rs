@@ -1,7 +1,7 @@
 //! The application: owns all state and the hidden controller window, and reacts to events.
 
 use crate::color;
-use crate::engine::{self, gamma};
+use crate::engine::{self, gamma, overlay::Overlays};
 use crate::info;
 use crate::monitors::{self, Monitor};
 use crate::tray::{self, MenuItem, Tray};
@@ -16,6 +16,9 @@ const CMD_EXIT: u32 = 1;
 const CMD_RESET: u32 = 2;
 /// Warmth presets: CMD_KELVIN_BASE + index into `color::PRESETS`.
 const CMD_KELVIN_BASE: u32 = 100;
+/// Brightness presets: CMD_BRIGHTNESS_BASE + index into `BRIGHTNESS_STEPS`.
+const CMD_BRIGHTNESS_BASE: u32 = 200;
+const BRIGHTNESS_STEPS: &[f32] = &[100.0, 80.0, 60.0, 40.0, 25.0, 15.0, 10.0, 5.0, 2.0];
 
 // Timer ids.
 const TIMER_DISPLAY_CHANGE: usize = 1;
@@ -27,7 +30,11 @@ pub struct App {
     msg_taskbar_created: u32,
     monitors: Vec<Monitor>,
     gamma: Vec<gamma::State>,
+    /// Last (kelvin, requested scale) and achieved scale per monitor, to skip redundant gamma writes.
+    applied: Vec<Option<(u32, f32, f32)>>,
+    overlays: Overlays,
     kelvin: u32,
+    brightness: f32,
 }
 
 impl App {
@@ -50,7 +57,10 @@ impl App {
                 msg_taskbar_created: RegisterWindowMessageW(w!("TaskbarCreated")),
                 monitors: Vec::new(),
                 gamma: Vec::new(),
+                applied: Vec::new(),
+                overlays: Overlays::new(),
                 kelvin: color::NEUTRAL_KELVIN,
+                brightness: engine::MAX_BRIGHTNESS,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -79,24 +89,40 @@ impl App {
     fn refresh_monitors(&mut self) {
         self.monitors = monitors::enumerate();
         self.gamma = vec![gamma::State::default(); self.monitors.len()];
+        self.applied = vec![None; self.monitors.len()];
+        self.overlays.resize(self.monitors.len());
         for m in &self.monitors {
             info!("monitor {} '{}' internal={} hdr={}", m.device, m.name, m.internal, m.hdr);
         }
         self.apply();
     }
 
-    /// Pushes the current state to every monitor.
+    /// Pushes the current state to every monitor: split → gamma → overlay.
     fn apply(&mut self) {
-        for (m, st) in self.monitors.iter().zip(self.gamma.iter_mut()) {
-            let a = gamma::apply(&m.device, self.kelvin, 1.0, st);
-            if a.limited || a.failed {
-                info!(
-                    "gamma on {}: warmth {:.2} scale {:.2} failed={}",
-                    m.device, a.warmth, a.scale, a.failed
-                );
-            }
+        for i in 0..self.monitors.len() {
+            let m = &self.monitors[i];
+            let split = engine::split(self.brightness, 0.0, false);
+            let want = (self.kelvin, split.software);
+            let achieved = match self.applied[i] {
+                Some((k, s, got)) if (k, s) == want => got,
+                _ => {
+                    let a = gamma::apply(&m.device, self.kelvin, split.software, &mut self.gamma[i]);
+                    if a.limited || a.failed {
+                        info!(
+                            "gamma on {}: warmth {:.2} scale {:.2} failed={}",
+                            m.device, a.warmth, a.scale, a.failed
+                        );
+                    }
+                    let got = if a.failed { 1.0 } else { a.scale };
+                    self.applied[i] = Some((want.0, want.1, got));
+                    got
+                }
+            };
+            let alpha = engine::overlay_alpha(split.software, achieved);
+            self.overlays.set(i, m.rect, alpha);
         }
-        let tip = format!("SLC — {}K {}", self.kelvin, color::preset_name(self.kelvin));
+        let tip =
+            format!("SLC — {:.0}% · {}K {}", self.brightness, self.kelvin, color::preset_name(self.kelvin));
         if let Some(t) = self.tray.as_mut() {
             t.set_tip(&tip);
         }
@@ -122,9 +148,21 @@ impl App {
                 MenuItem::check(CMD_KELVIN_BASE + i as u32, &format!("{name} ({k}K)"), *k == self.kelvin)
             })
             .collect();
+        let brightness = BRIGHTNESS_STEPS
+            .iter()
+            .enumerate()
+            .map(|(i, b)| {
+                MenuItem::check(
+                    CMD_BRIGHTNESS_BASE + i as u32,
+                    &format!("{b:.0}%"),
+                    (*b - self.brightness).abs() < 0.5,
+                )
+            })
+            .collect();
         let items = vec![
             MenuItem::disabled(0, "Screen Lighting Control"),
             MenuItem::Separator,
+            MenuItem::Sub { text: "Brightness".into(), items: brightness },
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
             MenuItem::item(CMD_RESET, "Reset everything"),
             MenuItem::Separator,
@@ -139,14 +177,37 @@ impl App {
                 self.kelvin = color::PRESETS[(c - CMD_KELVIN_BASE) as usize].0;
                 self.apply();
             }
+            c if (CMD_BRIGHTNESS_BASE..CMD_BRIGHTNESS_BASE + BRIGHTNESS_STEPS.len() as u32).contains(&c) => {
+                self.brightness = BRIGHTNESS_STEPS[(c - CMD_BRIGHTNESS_BASE) as usize];
+                self.apply();
+            }
             _ => {}
         }
+    }
+
+    /// Handles a command line forwarded from another `slc.exe` process.
+    fn on_forward(&mut self, line: &str) -> bool {
+        info!("forwarded: {line}");
+        let Ok(reqs) = crate::cli::parse_forward(line) else { return false };
+        for r in reqs {
+            match r {
+                crate::cli::Request::Brightness { value, .. } => {
+                    self.brightness = value.clamp(engine::MIN_BRIGHTNESS, engine::MAX_BRIGHTNESS)
+                }
+                crate::cli::Request::Kelvin(k) => self.kelvin = color::clamp_kelvin(k as i64),
+                other => info!("not supported yet: {other:?}"),
+            }
+        }
+        self.apply();
+        true
     }
 
     fn reset(&mut self) {
         info!("reset requested");
         self.kelvin = color::NEUTRAL_KELVIN;
+        self.brightness = engine::MAX_BRIGHTNESS;
         engine::reset_all(&self.monitors);
+        self.applied.iter_mut().for_each(|a| *a = None);
         self.apply();
     }
 
@@ -157,6 +218,16 @@ impl App {
                 let (x, y) = win::point_from(wp.0);
                 self.on_tray(win::loword(lp.0 as usize), POINT { x, y });
                 Some(LRESULT(0))
+            }
+            WM_COPYDATA => {
+                let cds = unsafe { &*(lp.0 as *const windows::Win32::System::DataExchange::COPYDATASTRUCT) };
+                if cds.dwData != win::COPYDATA_FORWARD || cds.lpData.is_null() {
+                    return Some(LRESULT(0));
+                }
+                let bytes =
+                    unsafe { std::slice::from_raw_parts(cds.lpData as *const u8, cds.cbData as usize) };
+                let line = String::from_utf8_lossy(bytes).into_owned();
+                Some(LRESULT(self.on_forward(&line) as isize))
             }
             WM_APP_ACTIVATE => {
                 info!("activated by another instance");
@@ -176,6 +247,7 @@ impl App {
                 Some(LRESULT(0))
             }
             WM_DESTROY => {
+                self.overlays.clear();
                 engine::reset_all(&self.monitors);
                 self.tray = None;
                 unsafe { PostQuitMessage(0) };
@@ -186,6 +258,7 @@ impl App {
                 if let Some(t) = self.tray.as_mut() {
                     t.add();
                 }
+                self.overlays.raise_all();
                 Some(LRESULT(0))
             }
             _ => None,

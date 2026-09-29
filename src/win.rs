@@ -11,6 +11,9 @@ pub const WM_APP_ACTIVATE: u32 = 0x8000 + 2;
 /// Hardware worker finished a job (wParam = monitor index).
 pub const WM_APP_HW_DONE: u32 = 0x8000 + 3;
 
+/// `COPYDATASTRUCT::dwData` tag for forwarded command lines ("SLC").
+pub const COPYDATA_FORWARD: usize = 0x534C43;
+
 /// Window class of the hidden controller window (also used to find the running instance).
 pub const CONTROLLER_CLASS: PCWSTR = windows::core::w!("MONTINA.SLC.Controller");
 pub const INSTANCE_MUTEX: PCWSTR = windows::core::w!("Local\\MONTINA.SLC.Instance");

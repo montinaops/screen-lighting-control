@@ -53,6 +53,10 @@ fn main() {
             println!("SLC: reset {n} monitor(s)");
             0
         }
+        Command::Forward(line) => {
+            console();
+            forward(&line)
+        }
         Command::SelfTest => {
             console();
             self_test()
@@ -96,6 +100,38 @@ fn run() -> i32 {
     drop(app);
     info!("exit {code}");
     code
+}
+
+/// Sends a request line to the running instance (WM_COPYDATA).
+fn forward(line: &str) -> i32 {
+    if let Err(e) = cli::parse_forward(line) {
+        eprintln!("slc: {e}");
+        return 2;
+    }
+    let Ok(hwnd) = (unsafe { FindWindowW(win::CONTROLLER_CLASS, None) }) else {
+        eprintln!("slc: SLC is not running");
+        return 1;
+    };
+    let bytes = line.as_bytes();
+    let cds = windows::Win32::System::DataExchange::COPYDATASTRUCT {
+        dwData: win::COPYDATA_FORWARD,
+        cbData: bytes.len() as u32,
+        lpData: bytes.as_ptr() as *mut _,
+    };
+    let r = unsafe {
+        windows::Win32::UI::WindowsAndMessaging::SendMessageW(
+            hwnd,
+            windows::Win32::UI::WindowsAndMessaging::WM_COPYDATA,
+            Some(windows::Win32::Foundation::WPARAM(0)),
+            Some(windows::Win32::Foundation::LPARAM(&cds as *const _ as isize)),
+        )
+    };
+    if r.0 == 1 {
+        0
+    } else {
+        eprintln!("slc: the running instance rejected the request");
+        1
+    }
 }
 
 /// Non-interactive checks (CI and diagnostics): prints what SLC can see and control.

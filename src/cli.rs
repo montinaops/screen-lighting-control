@@ -72,6 +72,64 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
     Ok(cli)
 }
 
+/// A request forwarded to the running instance.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Request {
+    Brightness {
+        value: f32,
+        monitor: Option<usize>,
+    },
+    Kelvin(u32),
+    Scene(String),
+    /// Minutes; 0 = until resumed.
+    Pause(u32),
+    Resume,
+}
+
+/// Parses the forwarded command line (e.g. `--set brightness=40 monitor=2 kelvin=3400`).
+pub fn parse_forward(s: &str) -> Result<Vec<Request>, String> {
+    let mut out = Vec::new();
+    let mut words = s.split_whitespace().peekable();
+    while let Some(w) = words.next() {
+        match w {
+            "--set" => {
+                let mut monitor = None;
+                let mut brightness = None;
+                while let Some(kv) = words.next_if(|n| !n.starts_with("--")) {
+                    let (k, v) = kv.split_once('=').ok_or_else(|| format!("expected key=value, got {kv}"))?;
+                    match k.to_ascii_lowercase().as_str() {
+                        "brightness" | "b" => {
+                            brightness = Some(
+                                v.trim_end_matches('%')
+                                    .parse::<f32>()
+                                    .map_err(|_| format!("bad brightness: {v}"))?,
+                            )
+                        }
+                        "kelvin" | "k" => out.push(Request::Kelvin(
+                            v.trim_end_matches(['k', 'K']).parse().map_err(|_| format!("bad kelvin: {v}"))?,
+                        )),
+                        "monitor" | "m" => {
+                            let n: usize = v.parse().map_err(|_| format!("bad monitor: {v}"))?;
+                            monitor = Some(n.checked_sub(1).ok_or("monitors are numbered from 1")?);
+                        }
+                        _ => return Err(format!("unknown setting: {k}")),
+                    }
+                }
+                if let Some(value) = brightness {
+                    out.push(Request::Brightness { value, monitor });
+                }
+            }
+            "--scene" => out.push(Request::Scene(words.next().ok_or("--scene needs a name")?.to_string())),
+            "--pause" => out.push(Request::Pause(
+                words.next().ok_or("--pause needs minutes")?.parse().map_err(|_| "bad minutes")?,
+            )),
+            "--resume" => out.push(Request::Resume),
+            other => return Err(format!("unexpected: {other}")),
+        }
+    }
+    Ok(out)
+}
+
 pub const HELP: &str = "\
 Screen Lighting Control (SLC)
 
@@ -119,6 +177,16 @@ mod tests {
         let c = p(&["--minimized", "--log", "x.txt"]).unwrap();
         assert!(c.minimized);
         assert_eq!(c.log_file.as_deref(), Some("x.txt"));
+    }
+
+    #[test]
+    fn parses_forwarded_requests() {
+        let r = parse_forward("--set brightness=40% monitor=2 kelvin=3400K").unwrap();
+        assert_eq!(r, vec![Request::Kelvin(3400), Request::Brightness { value: 40.0, monitor: Some(1) }]);
+        assert_eq!(parse_forward("--pause 60").unwrap(), vec![Request::Pause(60)]);
+        assert_eq!(parse_forward("--scene Night").unwrap(), vec![Request::Scene("Night".into())]);
+        assert!(parse_forward("--set monitor=0 brightness=1").is_err());
+        assert!(parse_forward("--set foo=1").is_err());
     }
 
     #[test]

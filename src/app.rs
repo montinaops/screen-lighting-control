@@ -7,6 +7,7 @@ use crate::hotkeys;
 use crate::info;
 use crate::model::{self, SceneEffect, Settings};
 use crate::monitors::{self, Monitor};
+use crate::schedule;
 use crate::tray::{self, MenuItem, Tray};
 use crate::ui::{osd, osd::Osd, theme};
 use crate::win::{self, CONTROLLER_CLASS, WM_APP_ACTIVATE, WM_APP_ENGINE, WM_APP_TRAY};
@@ -30,6 +31,10 @@ const CMD_SCENE_BASE: u32 = 300;
 const CMD_PAUSE_HOUR: u32 = 3;
 const CMD_PAUSE_FOREVER: u32 = 4;
 const CMD_RESUME: u32 = 5;
+const CMD_SCHEDULE_TOGGLE: u32 = 6;
+const CMD_SCHEDULE_RESUME: u32 = 7;
+/// Schedule-driven warmth changes smaller than this are skipped (invisible, saves gamma writes).
+const SCHEDULE_MIN_STEP_K: u32 = 25;
 
 /// Hotkey ids: 1 + index into `model::HOTKEY_ACTIONS`; scene hotkeys: HOTKEY_SCENE_BASE + scene index.
 const HOTKEY_SCENE_BASE: i32 = 100;
@@ -130,6 +135,10 @@ pub struct App {
     scene_index: usize,
     /// Hotkeys that could not be registered (shown in the tooltip / settings).
     hotkey_conflicts: Vec<String>,
+    /// Manual warmth that overrides the schedule until its phase changes (like f.lux).
+    override_k: Option<(u32, schedule::Phase)>,
+    /// Night factor (0–1) from the schedule, for the optional night brightness ceiling.
+    night: f32,
 }
 
 fn now_ms() -> u64 {
@@ -169,6 +178,8 @@ impl App {
                 paused_until: None,
                 scene_index: 0,
                 hotkey_conflicts: Vec::new(),
+                override_k: None,
+                night: 0.0,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -192,6 +203,7 @@ impl App {
             app.hw_worker = Some(hardware::Worker::start(events.clone()));
             app.events = Some(events);
             app.tray = Some(Tray::new(hwnd));
+            app.update_schedule(true);
             app.refresh_monitors();
             let _ = WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION);
             SetTimer(Some(hwnd), TIMER_GAMMA_CHECK, GAMMA_CHECK_MS, None);
@@ -321,14 +333,17 @@ impl App {
     }
 
     /// Pushes the current state to every monitor: split → hardware / gamma (async) → overlay.
+    #[allow(clippy::needless_range_loop)] // indexes screens, overlays and workers in lockstep
     fn apply(&mut self) {
         let paused = self.paused_until.is_some();
+        let ceilings: Vec<f32> =
+            self.screens.iter().map(|s| self.effective_brightness(s.brightness)).collect();
         for i in 0..self.screens.len() {
             let s = &mut self.screens[i];
             // A disabled monitor gets neutral software effects (hardware is left alone).
             let active = s.enabled && !paused;
             let (brightness, kelvin) = if active {
-                (s.brightness, self.kelvin)
+                (ceilings[i], self.kelvin)
             } else {
                 (engine::MAX_BRIGHTNESS, color::NEUTRAL_KELVIN)
             };
@@ -528,9 +543,54 @@ impl App {
         }
     }
 
+    /// A manual warmth change. With the schedule on it becomes an override until the next phase.
     fn set_kelvin(&mut self, k: u32) {
         self.kelvin = k;
         self.settings.kelvin = k;
+        if self.settings.schedule.enabled {
+            let phase = schedule::target_now(&self.settings.schedule).phase;
+            self.override_k = Some((k, phase));
+            info!("warmth override {k}K during {phase:?}");
+        }
+    }
+
+    /// Follows the schedule (called on the tick). Returns true if something visible changed.
+    fn update_schedule(&mut self, force: bool) -> bool {
+        let sc = &self.settings.schedule;
+        if !sc.enabled {
+            self.override_k = None;
+            let changed = self.kelvin != self.settings.kelvin || self.night != 0.0;
+            self.kelvin = self.settings.kelvin;
+            self.night = 0.0;
+            return changed;
+        }
+        let t = schedule::target_now(sc);
+        if let Some((_, phase)) = self.override_k {
+            if phase != t.phase {
+                info!("schedule phase changed to {:?}; override ended", t.phase);
+                self.override_k = None;
+            }
+        }
+        let k = self.override_k.map(|o| o.0).unwrap_or(t.kelvin);
+        let night_changed = (t.night - self.night).abs() >= 0.02 || (t.night == 0.0) != (self.night == 0.0);
+        let k_changed = self.kelvin.abs_diff(k) >= SCHEDULE_MIN_STEP_K || (force && self.kelvin != k);
+        if night_changed {
+            self.night = t.night;
+        }
+        if k_changed {
+            self.kelvin = k;
+        }
+        k_changed || night_changed
+    }
+
+    /// Brightness actually shown for a user value (applies the scheduled night ceiling).
+    fn effective_brightness(&self, b: f32) -> f32 {
+        match self.settings.schedule.night_brightness {
+            Some(nb) if self.settings.schedule.enabled && self.night > 0.0 => {
+                b.min(engine::MAX_BRIGHTNESS + (nb - engine::MAX_BRIGHTNESS) * self.night)
+            }
+            _ => b,
+        }
     }
 
     fn apply_scene(&mut self, index: usize) {
@@ -602,6 +662,9 @@ impl App {
                 self.resume();
             }
         }
+        if self.update_schedule(false) {
+            self.apply();
+        }
     }
 
     fn on_tray(&mut self, event: u32, anchor: POINT) {
@@ -659,12 +722,19 @@ impl App {
             MenuItem::Sub { text: "Brightness".into(), items: brightness },
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
             MenuItem::Sub { text: "Scenes".into(), items: scenes },
+            MenuItem::check(CMD_SCHEDULE_TOGGLE, "Automatic schedule", self.settings.schedule.enabled),
+        ];
+        let mut items = items;
+        if self.override_k.is_some() {
+            items.push(MenuItem::item(CMD_SCHEDULE_RESUME, "Return to schedule"));
+        }
+        items.extend([
             pause,
             MenuItem::Separator,
             MenuItem::item(CMD_RESET, "Reset everything"),
             MenuItem::Separator,
             MenuItem::item(CMD_EXIT, "Exit"),
-        ];
+        ]);
         match tray::popup(self.hwnd, at, &items) {
             CMD_EXIT => unsafe {
                 let _ = DestroyWindow(self.hwnd);
@@ -673,6 +743,16 @@ impl App {
             CMD_PAUSE_HOUR => self.pause(Some(60)),
             CMD_PAUSE_FOREVER => self.pause(None),
             CMD_RESUME => self.resume(),
+            CMD_SCHEDULE_TOGGLE => {
+                self.settings.schedule.enabled = !self.settings.schedule.enabled;
+                self.update_schedule(true);
+                self.commit();
+            }
+            CMD_SCHEDULE_RESUME => {
+                self.override_k = None;
+                self.update_schedule(true);
+                self.apply();
+            }
             c if (CMD_SCENE_BASE..CMD_SCENE_BASE + self.settings.scenes.len() as u32).contains(&c) => {
                 self.apply_scene((c - CMD_SCENE_BASE) as usize)
             }
@@ -779,6 +859,11 @@ impl App {
             }
             WM_TIMER if wp.0 == TIMER_GAMMA_CHECK => {
                 self.check_gamma();
+                Some(LRESULT(0))
+            }
+            WM_TIMECHANGE => {
+                self.update_schedule(true);
+                self.apply();
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_RESUME => {

@@ -163,7 +163,14 @@ Windows rejects gamma ramps that differ "too much" from identity unless the regi
 - Optional **brightness schedule**: night brightness value per monitor (off by default).
 - Alternative mode: **fixed times** instead of sun-based.
 - A **wake time** (default 07:00) sets bedtime (wake − 8 h) and pulls the sunrise transition earlier if needed.
-- Manual changes act as an **override** until the next schedule phase change (like f.lux).
+- Manual changes act as an **override** until the next schedule phase change (like f.lux); the tray menu offers
+  "Return to schedule".
+- **Curve model**: three overlapping weights (day, evening, night) with smoothstep ramps. Day is centered on day start
+  and sunset; night ramps in over 30 min before `bedtime − 1 h` and lasts until daylight has fully arrived. Colors are
+  interpolated in **mired** space (1e6/K), so equal steps look equally different. Tested: no minute-to-minute jump
+  above 250K over a whole day. Polar day/night are handled (always day / always night).
+- Without a location, sun mode falls back to the fixed times until a city is chosen; the settings window asks for one
+  on first run.
 - **Preview**: in Settings, scrub a 24-hour timeline to see and apply any time's look for 5 seconds.
 
 ---

@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 
 mod app;
+mod cities;
 mod cli;
 mod color;
 mod config;
@@ -14,6 +15,8 @@ mod log;
 mod model;
 mod monitors;
 mod safety;
+mod schedule;
+mod solar;
 mod tray;
 mod ui;
 mod win;
@@ -192,6 +195,26 @@ fn self_test() -> i32 {
         }
         engine::gamma::reset(&m.device);
     }
+    // Schedule (from the settings next to the exe or the installed copy).
+    let settings = config::Ini::load(&config::resolve().settings)
+        .map(|i| model::Settings::from_ini(&i))
+        .unwrap_or_default();
+    let sc = &settings.schedule;
+    let (y, doy, t, off) = schedule::now_local();
+    let ev = schedule::events(sc, y, doy, off);
+    let tg = schedule::target_at(sc, &ev, t);
+    println!(
+        "  schedule: enabled={} location={} day_start={} sunset={} night_start={} now={} -> {}K {:?} (UTC{:+}h)",
+        sc.enabled,
+        if sc.has_location() { format!("{} ({:.2},{:.2})", sc.city, sc.lat, sc.lon) } else { "none (fixed times)".into() },
+        model::format_hm(ev.day_start.round() as u32),
+        model::format_hm(ev.sunset.round() as u32),
+        model::format_hm(ev.night_start.round() as u32),
+        model::format_hm(t as u32),
+        tg.kelvin,
+        tg.phase,
+        off / 60.0
+    );
     // Pure-logic sanity: neutral white and ramp construction.
     let ok = color::white_point(6500).iter().all(|c| (c - 1.0).abs() < 1e-3)
         && color::build_ramp([1.0; 3], 1.0, 1.0) == color::identity_ramp();

@@ -1,0 +1,1306 @@
+# name|country|lat|lon — from GeoNames cities15000 (CC BY 4.0, https://www.geonames.org), largest cities + capitals
+Shanghai|China|31.222|121.458
+Chongqing|China|29.560|106.558
+Chengdu|China|30.667|104.067
+Beijing|China|39.907|116.397
+Guangzhou|China|23.117|113.250
+Shenzhen|China|22.546|114.068
+Kinshasa|Democratic Republic of the Congo|-4.328|15.314
+Istanbul|Turkey|41.014|28.950
+Lagos|Nigeria|6.454|3.395
+Ho Chi Minh City|Vietnam|10.823|106.630
+Tianjin|China|39.142|117.177
+Wuhan|China|30.583|114.267
+Lahore|Pakistan|31.558|74.351
+Xi’an|China|34.258|108.929
+Mumbai|India|19.073|72.883
+São Paulo|Brazil|-23.547|-46.636
+Mexico City|Mexico|19.428|-99.128
+Hangzhou|China|30.294|120.161
+Karachi|Pakistan|24.861|67.010
+Delhi|India|28.652|77.231
+Moscow|Russia|55.752|37.618
+Dhaka|Bangladesh|23.710|90.407
+Seoul|South Korea|37.566|126.978
+Harbin|China|45.750|126.650
+Tokyo|Japan|35.690|139.692
+Dongguan|China|23.018|113.749
+Cairo|Egypt|30.063|31.250
+Hefei|China|31.864|117.281
+Johannesburg|South Africa|-26.202|28.044
+Weifang|China|36.710|119.102
+Nanjing|China|32.062|118.778
+Shenyang|China|41.792|123.433
+Foshan|China|23.027|113.131
+London|United Kingdom|51.509|-0.126
+New York City|United States|40.714|-74.006
+Jakarta|Indonesia|-6.215|106.845
+Bengaluru|India|12.972|77.594
+Jinan|China|36.668|116.997
+Hanoi|Vietnam|21.024|105.841
+Taipei|Taiwan|25.053|121.526
+Lima|Peru|-12.043|-77.028
+Bogotá|Colombia|4.610|-74.082
+Dalian|China|38.912|121.602
+Hong Kong|Hong Kong|22.278|114.175
+Baghdad|Iraq|33.341|44.401
+Wuzhong|China|37.987|106.201
+Qingdao|China|36.065|120.380
+Tehran|Iran|35.694|51.422
+Yantai|China|37.476|121.441
+Hyderabad|India|17.384|78.456
+Rio de Janeiro|Brazil|-22.906|-43.182
+Puxi|China|31.244|121.466
+Zhengzhou|China|34.758|113.649
+Ahmedabad|India|23.026|72.587
+Abidjan|Ivory Coast|5.354|-4.002
+Nanning|China|22.817|108.317
+Kunming|China|25.039|102.718
+Shijiazhuang|China|38.041|114.479
+Changchun|China|43.880|125.323
+Pudong|China|31.240|121.501
+Sydney|Australia|-33.868|151.207
+Singapore|Singapore|1.290|103.850
+Melbourne|Australia|-37.814|144.963
+Dar es Salaam|Tanzania|-6.823|39.270
+Saint Petersburg|Russia|59.939|30.314
+Taiyuan|China|37.869|112.560
+Alexandria|Egypt|31.202|29.916
+Bangkok|Thailand|13.754|100.501
+Kano|Nigeria|12.000|8.517
+Santiago|Chile|-33.457|-70.648
+Cape Town|South Africa|-33.926|18.423
+Peshawar|Pakistan|34.008|71.578
+Zibo|China|36.791|118.063
+Jeddah|Saudi Arabia|21.490|39.186
+Chennai|India|13.088|80.278
+Kolkata|India|22.563|88.363
+Xiamen|China|24.480|118.082
+Surat|India|21.196|72.830
+Yangzhou|China|32.397|119.436
+Huai'an|China|33.589|119.019
+Guiyang|China|26.583|106.717
+Yangon|Myanmar|16.805|96.156
+Bao'an|China|22.552|113.883
+Kabul|Afghanistan|34.528|69.172
+Nairobi|Kenya|-1.283|36.817
+Wuxi|China|31.569|120.289
+Giza|Egypt|30.009|31.209
+Lanzhou|China|36.057|103.840
+Bamako|Mali|12.609|-7.975
+Riyadh|Saudi Arabia|24.688|46.722
+Ürümqi|China|43.801|87.600
+New Taipei City|Taiwan|25.062|121.457
+New Territories|Hong Kong|22.424|114.111
+Chattogram|Bangladesh|22.338|91.832
+Addis Ababa|Ethiopia|9.025|38.747
+Zaozhuang|China|34.865|117.554
+Zhongshan|China|22.523|113.379
+Shantou|China|23.355|116.679
+Los Angeles|United States|34.052|-118.244
+Faisalabad|Pakistan|31.416|73.090
+Dubai|United Arab Emirates|25.077|55.309
+Yokohama|Japan|35.433|139.650
+Ningbo|China|29.878|121.549
+Nanhai|China|23.022|113.143
+Casablanca|Morocco|33.588|-7.611
+Ibadan|Nigeria|7.378|3.906
+Ankara|Turkey|39.920|32.854
+Shiyan|China|32.648|110.778
+Hohhot|China|40.811|111.652
+Berlin|Germany|52.524|13.411
+Tangshan|China|39.644|118.183
+Rawalpindi|Pakistan|33.597|73.048
+Lüliang|China|37.519|111.144
+Durban|South Africa|-29.858|31.029
+Anshan|China|41.124|122.990
+Changzhou|China|31.774|119.954
+Busan|South Korea|35.102|129.030
+Madrid|Spain|40.416|-3.703
+Pyongyang|North Korea|39.034|125.754
+Pune|India|18.520|73.855
+Datong|China|40.094|113.291
+Bursa|Turkey|40.196|29.060
+Quezon City|Philippines|14.649|121.051
+Jaipur|India|26.920|75.788
+Huainan|China|32.626|116.997
+Surabaya|Indonesia|-7.249|112.751
+Incheon|South Korea|37.456|126.705
+Haikou|China|20.034|110.347
+Caracas|Venezuela|10.488|-66.879
+Kyiv|Ukraine|50.455|30.524
+İzmir|Turkey|38.413|27.138
+Huizhou|China|23.111|114.415
+Buenos Aires|Argentina|-34.613|-58.377
+Yinchuan|China|38.468|106.273
+Taichung|Taiwan|24.147|120.684
+Kanpur|India|26.465|80.350
+Toronto|Canada|43.706|-79.399
+Quito|Ecuador|-0.230|-78.525
+Brisbane|Australia|-27.468|153.028
+Luanda|Angola|-8.837|13.234
+Baotou|China|40.652|109.844
+Osaka|Japan|34.694|135.501
+Linyi|China|35.063|118.343
+Baoding|China|38.873|115.462
+Kaohsiung|Taiwan|22.616|120.313
+Brooklyn|United States|40.650|-73.950
+Guayaquil|Ecuador|-2.196|-79.886
+Belo Horizonte|Brazil|-19.921|-43.938
+Minhang|China|31.109|121.375
+Bazhong|China|31.869|106.744
+Salvador|Brazil|-12.976|-38.491
+Abuja|Nigeria|9.058|7.495
+Gazipur|Bangladesh|23.998|90.422
+Chicago|United States|41.850|-87.650
+Wenzhou|China|27.999|120.667
+Bekasi|Indonesia|-6.235|106.990
+Dakar|Senegal|14.694|-17.444
+Haiphong|Vietnam|20.865|106.683
+Yunfu|China|22.928|112.038
+Navi Mumbai|India|19.037|73.016
+Mogadishu|Somalia|2.037|45.344
+Kumasi|Ghana|6.688|-1.624
+Bandung|Indonesia|-6.922|107.607
+Gujranwala|Pakistan|32.156|74.187
+Medan|Indonesia|3.583|98.667
+Lucknow|India|26.839|80.923
+Xining|China|36.626|101.757
+Ouagadougou|Burkina Faso|12.366|-1.534
+Nagpur|India|21.146|79.085
+Fortaleza|Brazil|-3.717|-38.543
+Cali|Colombia|3.431|-76.520
+Perth|Australia|-31.952|115.861
+Daegu|South Korea|35.870|128.591
+Algiers|Algeria|36.732|3.087
+Nanchang|China|28.684|115.853
+Baku|Azerbaijan|40.378|49.892
+Nagoya|Japan|35.181|136.906
+Rome|Italy|41.892|12.511
+Queens|United States|40.681|-73.837
+Houston|United States|29.763|-95.363
+Mashhad|Iran|36.298|59.606
+Shaoxing|China|30.002|120.579
+Nantong|China|32.030|120.875
+Kowloon|Hong Kong|22.317|114.183
+Gaziantep|Turkey|37.059|37.383
+Lubumbashi|Democratic Republic of the Congo|-11.661|27.479
+Manaus|Brazil|-3.102|-60.025
+Lusaka|Zambia|-15.407|28.287
+Brasília|Brazil|-15.780|-47.930
+Zhuhai|China|22.277|113.568
+Santo Domingo|Dominican Republic|18.472|-69.892
+Lomé|Togo|6.129|1.222
+Multan|Pakistan|30.197|71.478
+Havana|Cuba|23.133|-82.383
+Depok|Indonesia|-6.400|106.819
+Ordos|China|39.609|109.782
+Paris|France|48.853|2.349
+Coimbatore|India|11.006|76.966
+Qingyang|China|35.710|107.645
+Port Harcourt|Nigeria|4.777|7.013
+Pretoria|South Africa|-25.745|28.188
+Córdoba|Argentina|-31.406|-64.189
+Mbuji-Mayi|Democratic Republic of the Congo|-6.136|23.590
+Aleppo|Syria|36.201|37.161
+Kunshan|China|31.378|120.954
+Al Mawşil al Jadīdah|Iraq|36.333|43.106
+Zunyi|China|27.687|106.907
+La Paz|Bolivia|-16.500|-68.150
+Lianyungang|China|34.598|119.216
+Medellín|Colombia|6.245|-75.572
+Puning|China|23.311|116.169
+Indore|India|22.718|75.833
+Brazzaville|Republic of the Congo|-4.266|15.283
+Tashkent|Uzbekistan|41.265|69.216
+Ganzhou|China|25.847|114.933
+Almaty|Kazakhstan|43.252|76.912
+Khartoum|Sudan|15.552|32.532
+Hamburg|Germany|53.551|9.993
+Sapporo|Japan|43.067|141.350
+Songjiang|China|31.034|121.223
+Accra|Ghana|5.556|-0.197
+Curitiba|Brazil|-25.428|-49.273
+Sanaa|Yemen|15.355|44.206
+Conakry|Guinea|9.538|-13.677
+Tangerang|Indonesia|-6.178|106.630
+Tijuana|Mexico|32.503|-117.004
+Hyderabad|Pakistan|25.397|68.377
+Beirut|Lebanon|33.893|35.502
+Jieyang|China|23.542|116.366
+Jilin|China|43.847|126.561
+Jiading|China|31.386|121.245
+Bucharest|Romania|44.432|26.106
+Camayenne|Guinea|9.535|-13.688
+Kakamega|Kenya|0.284|34.752
+Shangqiu|China|34.414|115.656
+Nanchong|China|30.795|106.085
+Tainan|Taiwan|22.991|120.213
+Kaduna|Nigeria|10.526|7.439
+Omdurman|Sudan|15.645|32.478
+Davao|Philippines|7.073|125.613
+Thāne|India|19.197|72.964
+Iztapalapa|Mexico|19.355|-99.062
+Diyarbakır|Turkey|37.914|40.217
+Santa Cruz de la Sierra|Bolivia|-17.786|-63.181
+Vadodara|India|22.299|73.208
+Adana|Turkey|36.986|35.325
+Nanyang|China|33.005|112.547
+Abu Dhabi|United Arab Emirates|24.451|54.397
+Palembang|Indonesia|-2.917|104.746
+Sharjah|United Arab Emirates|25.334|55.412
+Bhopal|India|23.255|77.403
+Jiangmen|China|22.583|113.083
+Benin City|Nigeria|6.338|5.626
+Jiangyin|China|31.911|120.263
+Fuyang|China|32.900|115.817
+Montréal|Canada|45.509|-73.588
+Bayan Nur|China|40.741|107.386
+Chengtangcun|China|35.084|117.191
+Maracaibo|Venezuela|10.642|-71.611
+Chaozhou|China|23.654|116.623
+Minsk|Belarus|53.900|27.567
+Budapest|Hungary|47.498|19.040
+Qingyuan|China|23.700|113.033
+Tai’an|China|36.185|117.120
+Rasapūdipalem|India|17.733|83.316
+Pimpri-Chinchwad|India|18.619|73.804
+Caloocan|Philippines|14.650|120.968
+Warsaw|Poland|52.230|21.012
+Soweto|South Africa|-26.268|27.858
+Semarang|Indonesia|-6.993|110.421
+Puebla|Mexico|19.048|-98.207
+Vienna|Austria|48.208|16.372
+Barcelona|Spain|41.389|2.159
+Patna|India|25.594|85.136
+Mosul|Iraq|36.335|43.119
+Kallakurichi|India|11.734|78.959
+Kampala|Uganda|0.316|32.582
+Changshu|China|31.646|120.742
+Rabat|Morocco|34.013|-6.833
+Recife|Brazil|-8.054|-34.881
+Phoenix|United States|33.448|-112.074
+Suzhou|China|33.636|116.979
+Ecatepec de Morelos|Mexico|19.605|-99.061
+Lu’an|China|31.736|116.517
+Valencia|Venezuela|10.162|-68.000
+Ludhiana|India|30.912|75.854
+Yancheng|China|33.358|120.157
+Novosibirsk|Russia|55.023|82.932
+Erbil|Iraq|36.191|44.009
+Fukuoka|Japan|33.600|130.417
+Daqing|China|46.583|125.000
+Kisangani|Democratic Republic of the Congo|0.515|25.191
+Manila|Philippines|14.604|120.982
+Wuhu|China|31.353|118.429
+Santiago de Querétaro|Mexico|20.588|-100.388
+Dazhou|China|31.211|107.463
+León de los Aldama|Mexico|21.122|-101.683
+Makkah|Saudi Arabia|21.427|39.826
+Philadelphia|United States|39.952|-75.164
+Phnom Penh|Cambodia|11.562|104.916
+Guilin|China|25.280|110.296
+Damascus|Syria|33.510|36.291
+Quetta|Pakistan|30.184|67.001
+Zhaoqing|China|23.049|112.461
+Onitsha|Nigeria|6.150|6.786
+Mianyang|China|31.468|104.682
+Auckland|New Zealand|-36.849|174.763
+Isfahan|Iran|32.652|51.675
+Wanzhou|China|30.765|108.396
+Astana|Kazakhstan|51.180|71.446
+Harare|Zimbabwe|-17.828|31.053
+Monrovia|Liberia|6.301|-10.797
+Putian|China|25.439|119.010
+Kawasaki|Japan|35.521|139.717
+Goiânia|Brazil|-16.679|-49.254
+San Antonio|United States|29.424|-98.494
+Kobe|Japan|34.691|135.183
+Jinzhou|China|41.108|121.142
+Stockholm|Sweden|59.329|18.069
+Ciudad Juárez|Mexico|31.720|-106.461
+Cần Thơ|Vietnam|10.037|105.788
+Munich|Germany|48.137|11.575
+Khulna|Bangladesh|22.810|89.564
+Belém|Brazil|-1.456|-48.504
+Yekaterinburg|Russia|56.857|60.615
+Porto Alegre|Brazil|-30.033|-51.230
+Manhattan|United States|40.783|-73.966
+Nashik|India|19.997|73.791
+Taizhou|China|28.663|121.433
+Asunción|Paraguay|-25.286|-57.647
+Yiwu|China|29.315|120.077
+Zapopan|Mexico|20.721|-103.387
+Makassar|Indonesia|-5.149|119.432
+Adelaide|Australia|-34.929|138.599
+Quanzhou|China|24.914|118.586
+Madurai|India|9.919|78.120
+Jinhua|China|29.107|119.644
+Kyoto|Japan|35.021|135.754
+Cixi|China|30.176|121.246
+Changde|China|29.032|111.698
+Kuala Lumpur|Malaysia|3.141|101.687
+Kayseri|Turkey|38.732|35.485
+Kaifeng|China|34.799|114.307
+Karaj|Iran|35.833|50.992
+Kathmandu|Nepal|27.702|85.321
+Daejeon|South Korea|36.349|127.385
+Baoji|China|34.368|107.237
+Suqian|China|33.949|118.296
+Liuzhou|China|24.324|109.407
+Tirunelveli|India|8.727|77.684
+Konya|Turkey|37.871|32.485
+Zhangjiagang|China|31.865|120.539
+Agra|India|27.183|78.017
+South Tangerang|Indonesia|-6.289|106.718
+Tabriz|Iran|38.080|46.292
+Kharkiv|Ukraine|49.982|36.255
+Xinyang|China|32.123|114.066
+Jinjiang|China|24.820|118.574
+Faridabad|India|28.411|77.313
+Bozhou|China|33.877|115.770
+Qujing|China|25.483|103.783
+San Diego|United States|32.716|-117.165
+Gwangju|South Korea|35.155|126.916
+Zhanjiang|China|21.234|110.387
+Fushun|China|41.887|123.944
+Rājkot|India|22.292|70.793
+Luoyang|China|34.673|112.437
+Guadalajara|Mexico|20.677|-103.347
+The Bronx|United States|40.850|-73.866
+Huế|Vietnam|16.462|107.595
+Guankou|China|28.159|113.627
+Milan|Italy|45.464|9.190
+Najafgarh|India|28.609|76.980
+Lianjiang|China|21.647|110.282
+N'Djamena|Chad|12.107|15.044
+Handan|China|36.610|114.488
+Bannu|Pakistan|32.985|70.604
+Yichang|China|30.714|111.285
+Antananarivo|Madagascar|-18.914|47.536
+Heze|China|35.239|115.474
+Guarulhos|Brazil|-23.463|-46.533
+Abobo|Ivory Coast|5.416|-4.016
+Jamshedpur|India|22.803|86.185
+Douala|Cameroon|4.048|9.704
+Antalya|Turkey|36.908|30.696
+Basrah|Iraq|30.509|47.780
+Dallas|United States|32.783|-96.807
+Saitama|Japan|35.908|139.657
+Niamey|Niger|13.514|2.110
+Liupanshui|China|26.594|104.833
+Taguig|Philippines|14.524|121.079
+Maoming|China|21.666|110.914
+Calgary|Canada|51.050|-114.085
+Tripoli|Libya|32.887|13.187
+Madinah|Saudi Arabia|24.469|39.614
+Yaoundé|Cameroon|3.867|11.517
+Batam|Indonesia|1.149|104.025
+Qinzhou|China|21.982|108.651
+Luohe|China|33.574|114.033
+Xiangyang|China|32.042|112.145
+Yangjiang|China|21.856|111.963
+Yixing|China|31.361|119.820
+Pimpri|India|18.623|73.807
+Da Nang|Vietnam|16.068|108.221
+Amman|Jordan|31.955|35.945
+Budta|Philippines|7.204|124.440
+Belgrade|Serbia|44.804|20.465
+Biên Hòa|Vietnam|10.945|106.824
+Kananga|Democratic Republic of the Congo|-5.896|22.417
+Qingpu|China|31.154|121.114
+Montevideo|Uruguay|-34.903|-56.188
+Xuchang|China|34.032|113.863
+Kalyān|India|19.244|73.136
+Zigong|China|29.342|104.777
+Nizhniy Novgorod|Russia|56.329|44.002
+Jepara|Indonesia|-6.592|110.671
+Maputo|Mozambique|-25.966|32.583
+Xuzhou|China|34.204|117.284
+Dammam|Saudi Arabia|26.434|50.103
+Ra’s Bayrūt|Lebanon|33.900|35.483
+Neijiang|China|29.584|105.062
+Shiraz|Iran|29.610|52.531
+Heshan|China|28.569|112.347
+Dombivali|India|19.217|73.083
+Kazan|Russia|55.789|49.122
+Jining|China|35.405|116.581
+Barquisimeto|Venezuela|10.065|-69.357
+Shubrā al Khaymah|Egypt|30.125|31.251
+Putuo|China|31.251|121.390
+Port-au-Prince|Haiti|18.543|-72.339
+Suwon|South Korea|37.291|127.009
+Liaocheng|China|36.451|116.002
+Jinzhong|China|37.684|112.755
+Callao|Peru|-12.052|-77.135
+Meerut|India|28.980|77.706
+Virār|India|19.456|72.811
+Nowrangapur|India|19.231|82.548
+Karbala|Iraq|32.616|44.025
+Tianshui|China|34.580|105.742
+Sadr City|Iraq|33.389|44.458
+Yangpu|China|31.262|121.519
+Mombasa|Kenya|-4.055|39.664
+Mandalay|Myanmar|21.975|96.084
+Srinagar|India|34.086|74.806
+Barranquilla|Colombia|10.969|-74.781
+Chelyabinsk|Russia|55.161|61.429
+Mérida|Mexico|20.967|-89.623
+Hiroshima|Japan|34.400|132.450
+Shymkent|Kazakhstan|42.310|69.600
+Santiago de los Caballeros|Dominican Republic|19.450|-70.691
+Weinan|China|34.504|109.509
+Ghāziābād|India|28.665|77.439
+Matola|Mozambique|-25.962|32.459
+Dhanbad|India|23.798|86.430
+Arequipa|Peru|-16.399|-71.537
+Hong Kong Island|Hong Kong|22.263|114.184
+Fes|Morocco|34.033|-5.000
+Gustavo Adolfo Madero|Mexico|19.494|-99.111
+Nouakchott|Mauritania|18.086|-15.979
+Jiaxing|China|30.752|120.750
+Aurangabad|India|19.878|75.342
+Zhongwei|China|37.511|105.191
+Omsk|Russia|54.992|73.369
+Pikine|Senegal|14.765|-17.391
+Pekanbaru|Indonesia|0.517|101.442
+Panjin|China|41.121|122.074
+Bandar Lampung|Indonesia|-5.429|105.261
+Prague|Czechia|50.088|14.421
+Varanasi|India|25.317|83.010
+Jiujiang|China|29.705|116.002
+Samara|Russia|53.208|50.136
+Aba|Nigeria|5.107|7.367
+Amritsar|India|31.622|74.875
+Birmingham|United Kingdom|52.481|-1.900
+Copenhagen|Denmark|55.676|12.566
+Sofia|Bulgaria|42.698|23.324
+Anyang|China|36.096|114.383
+Yerevan|Armenia|40.178|44.513
+Luohu District|China|22.547|114.131
+Vijayawada|India|16.507|80.647
+Fengxiang|China|30.858|121.468
+Bijie|China|27.302|105.286
+Monterrey|Mexico|25.684|-100.317
+Kigali|Rwanda|-1.950|30.059
+Rostov-on-Don|Russia|47.220|39.708
+Zhuzhou|China|27.833|113.150
+Rui’an|China|27.776|120.659
+Malingao|Philippines|7.161|124.475
+Touba|Senegal|14.862|-15.875
+Ufa|Russia|54.743|55.968
+Ranchi|India|23.343|85.309
+Zoucheng|China|35.401|116.966
+Shangrao|China|28.452|117.943
+Lilongwe|Malawi|-13.967|33.787
+Huaibei|China|33.974|116.792
+Maiduguri|Nigeria|11.847|13.157
+Xuhui|China|31.196|121.447
+Meishan|China|30.044|103.837
+Mwanza|Tanzania|-2.517|32.900
+Wuchang|China|30.543|114.301
+Ulsan|South Korea|35.537|129.317
+Sendai|Japan|38.267|140.867
+Krasnoyarsk|Russia|56.037|92.931
+Fuzhou|China|27.960|116.333
+Guigang|China|23.116|109.595
+Oslo|Norway|59.913|10.746
+Jabalpur|India|23.167|79.950
+Ilorin|Nigeria|8.497|4.542
+Aden|Yemen|12.780|45.039
+Bogor|Indonesia|-6.594|106.789
+Ciudad Nezahualcoyotl|Mexico|19.401|-99.015
+Hengyang|China|26.889|112.619
+Prayagraj|India|25.445|81.843
+Trujillo|Peru|-8.116|-79.030
+Visakhapatnam|India|17.680|83.202
+Goyang-si|South Korea|37.656|126.835
+Yulin|China|22.631|110.147
+Jodhpur|India|26.268|73.006
+Gwalior|India|26.230|78.173
+Jingzhou|China|30.350|112.190
+Gqeberha|South Africa|-33.961|25.615
+Tbilisi|Georgia|41.691|44.834
+Voronezh|Russia|51.668|39.192
+Xinxiang|China|35.190|113.802
+Yichun|China|27.833|114.400
+Sokoto|Nigeria|13.063|5.243
+Jos|Nigeria|9.928|8.892
+Tangier|Morocco|35.767|-5.800
+Teni|India|10.011|77.478
+Xianyang|China|34.338|108.703
+Mexicali|Mexico|32.628|-115.454
+Pointe-Noire|Republic of the Congo|-4.776|11.864
+Maceió|Brazil|-9.666|-35.735
+Campinas|Brazil|-22.906|-47.061
+Sanya|China|18.254|109.509
+Rangpur|Bangladesh|25.747|89.252
+Kirkuk|Iraq|35.468|44.392
+Ashgabat|Turkmenistan|37.950|58.383
+Shaoguan|China|24.800|113.583
+Howrah|India|22.577|88.319
+Raipur|India|21.233|81.633
+Changwon|South Korea|35.228|128.681
+Longyan|China|25.075|117.018
+Köln|Germany|50.933|6.950
+Dublin|Ireland|53.333|-6.249
+Tiruchirappalli|India|10.816|78.697
+Yongzhou|China|26.424|111.613
+Brussels|Belgium|50.850|4.349
+Zamboanga|Philippines|6.910|122.074
+Ottawa|Canada|45.411|-75.698
+Huzhou|China|30.870|120.093
+Xinyi|China|22.373|110.947
+Volgograd|Russia|48.714|44.498
+Khartoum North|Sudan|15.649|32.535
+Edmonton|Canada|53.550|-113.469
+Odesa|Ukraine|46.486|30.744
+Wuwei|China|37.927|102.632
+Jacksonville|United States|30.332|-81.656
+Fort Worth|United States|32.725|-97.321
+Yishui|China|35.785|118.628
+Hanzhong|China|33.075|107.022
+Hezhou|China|24.404|111.567
+Pest|Hungary|47.500|19.083
+Kota|India|25.183|75.839
+Zhu Cheng City|China|35.995|119.403
+Shivaji Nagar|India|18.530|73.853
+Dongying|China|37.463|118.492
+Luzhou|China|28.890|105.426
+San Jose|United States|37.339|-121.895
+Sholapur|India|17.672|75.910
+Marrakesh|Morocco|31.634|-8.000
+Guatemala City|Guatemala|14.641|-90.513
+Meizhou|China|24.289|116.118
+Yueyang|China|29.375|113.095
+Laiwu|China|36.193|117.657
+Esenyurt|Turkey|41.027|28.677
+Perm|Russia|58.010|56.250
+Zaria|Nigeria|11.111|7.723
+Kennedy|Colombia|4.617|-74.146
+Chiba|Japan|35.600|140.117
+Pingdingshan|China|33.731|113.316
+Ciudad Guayana|Venezuela|8.351|-62.641
+Sargodha|Pakistan|32.086|72.674
+Austin|United States|30.267|-97.743
+Managua|Nicaragua|12.133|-86.250
+Bengbu|China|32.941|117.361
+Salé|Morocco|34.053|-6.798
+Jerusalem|Israel|31.769|35.216
+Chandigarh|India|30.736|76.788
+Dnipro|Ukraine|48.467|35.041
+Feicheng|China|36.249|116.766
+Cebu City|Philippines|10.317|123.891
+Sanhe|China|39.980|117.069
+Guli|China|28.882|120.033
+Tiruppur|India|11.115|77.355
+Guwahati|India|26.184|91.746
+Xiangtan|China|27.850|112.900
+Linfen|China|36.089|111.519
+Victoria|Hong Kong|22.288|114.144
+Zhenjiang|China|32.211|119.455
+Enugu|Nigeria|6.441|7.499
+Rosario|Argentina|-32.947|-60.639
+Sulţānah|Saudi Arabia|24.493|39.586
+Huludao|China|40.752|120.836
+Hubballi|India|15.348|75.134
+Padang|Indonesia|-0.949|100.354
+Kitakyushu|Japan|33.852|130.850
+Taiz|Yemen|13.580|44.021
+Setagaya|Japan|35.642|139.647
+Kingston|Jamaica|17.997|-76.794
+Jing’an|China|31.220|121.416
+Baoshan|China|25.116|99.164
+Chihuahua|Mexico|28.635|-106.089
+Nay Pyi Taw|Myanmar|19.745|96.130
+Eskişehir|Turkey|39.777|30.521
+Mysuru|India|12.298|76.639
+Chengde|China|40.952|117.959
+Salem|India|11.654|78.155
+São Luís|Brazil|-2.530|-44.303
+Seongnam-si|South Korea|37.439|127.138
+Cartagena|Colombia|10.398|-75.493
+Antipolo|Philippines|14.626|121.123
+Columbus|United States|39.961|-82.999
+Sialkot|Pakistan|32.493|74.531
+Charlotte|United States|35.227|-80.843
+Laibin|China|23.747|109.222
+Warri|Nigeria|5.517|5.750
+Naples|Italy|40.852|14.268
+Xiaogan|China|30.927|113.922
+Wuchuan|China|21.457|110.766
+Campo Grande|Brazil|-20.443|-54.646
+Ziyang|China|30.121|104.648
+Bobo-Dioulasso|Burkina Faso|11.181|-4.295
+Bahawalpur|Pakistan|29.398|71.675
+Quzhou|China|28.959|118.869
+Blantyre|Malawi|-15.785|35.009
+Donetsk|Ukraine|48.023|37.802
+Qom|Iran|34.640|50.876
+Bishkek|Kyrgyzstan|42.870|74.590
+Abū Ghurayb|Iraq|33.306|44.185
+Krasnodar|Russia|45.045|38.982
+Natal|Brazil|-5.795|-35.209
+Pingxiang|China|27.617|113.854
+Malang|Indonesia|-7.980|112.630
+Cancún|Mexico|21.174|-86.847
+Indianapolis|United States|39.768|-86.158
+Gurugram|India|28.460|77.026
+Bhubaneswar|India|20.272|85.834
+Zhoushan|China|29.989|122.205
+Qiqihar|China|47.339|123.962
+Mulenvos|Angola|-8.867|13.334
+Sulaymaniyah|Iraq|35.565|45.433
+Marseille|France|43.297|5.381
+Bhiwandi|India|19.300|73.059
+Soshanguve|South Africa|-25.473|28.099
+Laiyang|China|36.976|120.714
+Daye|China|30.083|114.950
+Teresina|Brazil|-5.089|-42.802
+Ankang|China|32.680|109.017
+Jalandhar|India|31.326|75.579
+Rotterdam|The Netherlands|51.922|4.479
+Langfang|China|39.521|116.715
+Lhasa|China|29.650|91.100
+Duque de Caxias|Brazil|-22.786|-43.312
+Viana|Angola|-8.906|13.375
+Jiaozuo|China|35.239|113.239
+Samarinda|Indonesia|-0.492|117.146
+Benxi|China|41.289|123.765
+Rohini|India|28.743|77.068
+Wanxian|China|30.816|108.374
+Guang’an|China|30.474|106.637
+Johor Bahru|Malaysia|1.466|103.758
+Arifwala|Pakistan|30.291|73.066
+Pasig City|Philippines|14.587|121.061
+Cheongju-si|South Korea|36.637|127.490
+Kanayannur|India|9.967|76.267
+Tegucigalpa|Honduras|14.082|-87.207
+Bucheon-si|South Korea|37.499|126.783
+Thanh Hóa|Vietnam|19.800|105.767
+Turin|Italy|45.070|7.687
+Al Ain City|United Arab Emirates|24.192|55.761
+Libreville|Gabon|0.392|9.454
+Saratov|Russia|51.540|45.990
+Ulan Bator|Mongolia|47.908|106.883
+Weihai|China|37.509|122.114
+Takeo|Cambodia|10.991|104.785
+Nova Iguaçu|Brazil|-22.759|-43.451
+Cochabamba|Bolivia|-17.382|-66.160
+Ahvaz|Iran|31.319|48.684
+Vientiane|Laos|17.967|102.600
+São Bernardo do Campo|Brazil|-23.694|-46.565
+Zhabei|China|31.259|121.460
+Shangyu|China|30.016|120.871
+Xinyu|China|27.804|114.933
+Pietermaritzburg|South Africa|-29.617|30.393
+Yibin|China|28.759|104.640
+Naucalpan de Juárez|Mexico|19.479|-99.240
+Kampung Baru Subang|Malaysia|3.150|101.533
+Bouaké|Ivory Coast|7.694|-5.030
+Taicang|China|31.448|121.094
+San Francisco|United States|37.775|-122.419
+Sakai|Japan|34.582|135.467
+Jiaojiang|China|28.698|121.473
+Valencia|Spain|39.474|-0.380
+Jinshan|China|30.836|121.294
+Chenzhou|China|25.800|113.033
+João Pessoa|Brazil|-7.115|-34.863
+Bukavu|Democratic Republic of the Congo|-2.491|28.843
+Kraków|Poland|50.061|19.937
+Dandong|China|40.129|124.395
+Barcelona|Venezuela|10.138|-64.688
+Bangui|Central African Republic|4.361|18.555
+Hermosillo|Mexico|29.089|-110.967
+Bhayandar|India|19.302|72.851
+Culiacán|Mexico|24.802|-107.394
+Petaling Jaya|Malaysia|3.107|101.607
+Anqing|China|30.514|117.047
+Oran|Algeria|35.699|-0.636
+Freetown|Sierra Leone|8.487|-13.236
+San Pedro Sula|Honduras|15.506|-88.026
+Narela|India|28.853|77.093
+Xingtai|China|37.062|114.493
+Niigata|Japan|37.923|139.041
+Muscat|Oman|23.584|58.408
+Zarqa|Jordan|32.073|36.088
+Çankaya|Turkey|39.918|32.863
+Küçükçekmece|Turkey|40.991|28.771
+Hamamatsu|Japan|34.700|137.733
+Kolwezi|Democratic Republic of the Congo|-10.715|25.467
+Vinh|Vietnam|18.673|105.692
+Thiruvananthapuram|India|8.486|76.949
+Zhaotong|China|27.317|103.717
+Hondlon|China|40.648|109.794
+Panzhihua|China|26.585|101.713
+Chuzhou|China|32.322|118.298
+Seattle|United States|47.606|-122.332
+Port Said|Egypt|31.265|32.302
+Cúcuta|Colombia|7.907|-72.505
+Homs|Syria|34.724|36.726
+Xuancheng|China|30.953|118.755
+Ibb|Yemen|13.967|44.183
+Tasikmalaya|Indonesia|-7.327|108.221
+Nampula|Mozambique|-15.116|39.267
+Bujumbura|Burundi|-3.382|29.361
+Tyumen|Russia|57.152|65.527
+Erzurum|Turkey|39.909|41.277
+Anshun|China|26.250|105.933
+Dodoma|Tanzania|-6.172|35.739
+Rajshahi|Bangladesh|24.374|88.601
+Dera Ismail Khan|Pakistan|31.831|70.902
+Sorocaba|Brazil|-23.502|-47.458
+Wuzhou|China|23.481|111.288
+Ipoh|Malaysia|4.584|101.083
+Qinhuangdao|China|39.941|119.589
+Benghazi|Libya|32.115|20.069
+Uberlândia|Brazil|-18.919|-48.277
+Alīgarh|India|27.881|78.075
+Shaoyang|China|27.238|111.462
+Malatya|Turkey|38.350|38.317
+Winnipeg|Canada|49.884|-97.147
+Ōta|Japan|35.561|139.716
+Andijon|Uzbekistan|40.783|72.351
+Bareilly|India|28.367|79.432
+Buraydah|Saudi Arabia|26.326|43.975
+Hegang|China|47.347|130.290
+Morelia|Mexico|19.701|-101.184
+Riga|Latvia|56.946|24.106
+Zhuanghe|China|39.701|122.991
+Amsterdam|The Netherlands|52.374|4.890
+Cagayan de Oro|Philippines|8.482|124.647
+Ma’anshan|China|31.686|118.510
+Shah Alam|Malaysia|3.085|101.533
+Bağcılar|Turkey|41.039|28.857
+Shizuishan|China|38.981|106.389
+Kumamoto|Japan|32.806|130.692
+Oyo|Nigeria|7.854|3.932
+Serang|Indonesia|-6.115|106.154
+Torreón|Mexico|25.544|-103.419
+Deyang|China|31.130|104.382
+Abeokuta|Nigeria|7.156|3.345
+Al Ḩudaydah|Yemen|14.798|42.955
+Yangquan|China|37.858|113.563
+Akure|Nigeria|7.253|5.193
+Denver|United States|39.739|-104.985
+Osasco|Brazil|-23.532|-46.792
+Kikolo|Angola|-8.781|13.334
+Maianga|Angola|-8.847|13.237
+São José dos Campos|Brazil|-23.179|-45.887
+Álvaro Obregón|Mexico|19.359|-99.203
+Aihara|Japan|35.600|139.317
+Evaton|South Africa|-26.533|27.850
+Valenzuela|Philippines|14.700|120.967
+Muzaffarābād|Pakistan|34.370|73.471
+Okayama|Japan|34.650|133.933
+San Luis Potosí|Mexico|22.152|-100.971
+Aguascalientes|Mexico|21.883|-102.284
+General Santos|Philippines|6.113|125.172
+Zhumadian|China|32.984|114.026
+Morādābād|India|28.839|78.777
+Sagamihara|Japan|35.567|139.242
+Qingshan|China|40.663|109.882
+Mississauga|Canada|43.579|-79.658
+Lviv|Ukraine|49.838|24.023
+Namangan|Uzbekistan|40.998|71.673
+Zaporizhzhya|Ukraine|47.852|35.117
+Zanzibar|Tanzania|-6.164|39.198
+Saltillo|Mexico|25.426|-100.980
+Latakia|Syria|35.531|35.791
+Subang Jaya|Malaysia|3.044|101.581
+Warangal|India|18.000|79.583
+Paranaque City|Philippines|14.482|121.017
+Tolyatti|Russia|53.530|49.346
+Santo Domingo Oeste|Dominican Republic|18.500|-70.000
+Santo Domingo Este|Dominican Republic|18.485|-69.848
+Dhārāvi|India|19.050|72.867
+Battagram|Pakistan|34.677|73.023
+Suez|Egypt|29.974|32.526
+Changzhi|China|35.209|111.739
+Ribeirão Preto|Brazil|-21.177|-47.810
+Agadir|Morocco|30.420|-9.598
+Edogawe|Japan|35.692|139.873
+Sarajevo|Bosnia and Herzegovina|43.849|18.356
+Balikpapan|Indonesia|-1.268|116.829
+Adachi|Japan|35.763|139.808
+Changning|China|31.217|121.421
+Bauchi|Nigeria|10.310|9.844
+Shizuoka|Japan|34.983|138.383
+Tunis|Tunisia|36.819|10.166
+Zhangjiakou|China|40.783|114.871
+Washington|United States|38.895|-77.036
+Nashville|United States|36.166|-86.784
+Fuxin|China|42.016|121.659
+Ta’if|Saudi Arabia|21.270|40.416
+Changsha|China|22.381|112.685
+Huangshi|China|30.247|115.048
+Liaoyang|China|41.272|123.173
+Hlaingthaya|Myanmar|16.850|96.067
+Beira|Mozambique|-19.844|34.839
+Hongkou|China|31.250|121.489
+Zaragoza|Spain|41.656|-0.877
+Sevilla|Spain|37.383|-5.973
+Baise|China|23.890|106.627
+Pontianak|Indonesia|-0.032|109.325
+Situbondo|Indonesia|-7.706|114.010
+Agege|Nigeria|6.616|3.333
+Binzhou|China|37.367|118.017
+Oklahoma City|United States|35.468|-97.516
+Yuncheng|China|35.023|110.993
+Dezhou|China|37.447|116.367
+Dushanbe|Tajikistan|38.536|68.779
+Cotonou|Benin|6.365|2.418
+El Paso|United States|31.759|-106.487
+Gorakhpur|India|26.766|83.369
+Guadalupe|Mexico|25.677|-100.259
+Wrocław|Poland|51.103|17.030
+Denpasar|Indonesia|-8.650|115.217
+Guntur|India|16.300|80.457
+Katsina|Nigeria|12.991|7.602
+Sanmenxia|China|34.781|111.193
+E’zhou|China|30.396|114.887
+Madīnat an Naşr|Egypt|30.067|31.300
+Camama|Angola|-8.936|13.265
+Tabuk|Saudi Arabia|28.400|36.572
+Kitwe|Zambia|-12.802|28.213
+Bulawayo|Zimbabwe|-20.150|28.583
+Mudanjiang|China|44.548|129.626
+Aracaju|Brazil|-10.911|-37.072
+Joinville|Brazil|-26.304|-48.846
+Athens|Greece|37.984|23.728
+Zagreb|Croatia|45.814|15.978
+Leshan|China|29.562|103.764
+Santo André|Brazil|-23.664|-46.538
+Vancouver|Canada|49.250|-123.119
+Rizhao|China|35.414|119.529
+Helsinki|Finland|60.170|24.935
+Cheonan|South Korea|36.806|127.152
+Acapulco de Juárez|Mexico|16.849|-99.909
+Dongcun|China|36.777|121.160
+Banjarmasin|Indonesia|-3.320|114.591
+Puducherry|India|11.934|79.830
+Suining|China|30.508|105.573
+Brampton|Canada|43.683|-79.766
+Huangpu|China|31.238|121.478
+Golfe|Angola|-8.866|13.262
+Puyang|China|35.756|115.044
+Soacha|Colombia|4.579|-74.217
+Boston|United States|42.358|-71.060
+Tlalnepantla|Mexico|19.540|-99.195
+Jājmau|India|26.430|80.409
+Portland|United States|45.523|-122.676
+Calumbo|Angola|-9.147|13.419
+Tlaquepaque|Mexico|20.641|-103.293
+Frankfurt am Main|Germany|50.116|8.684
+Macau|Macao|22.201|113.546
+Palermo|Italy|38.117|13.364
+Izhevsk|Russia|56.852|53.199
+Colombo|Sri Lanka|6.935|79.849
+Maturín|Venezuela|9.746|-63.183
+Amravati|India|20.933|77.750
+Lingyuan|China|41.240|119.401
+Detroit|United States|42.331|-83.046
+Osogbo|Nigeria|7.771|4.557
+Mingguang|China|32.780|117.964
+Honchō|Japan|35.701|139.986
+Bikaner|India|28.018|73.315
+Jaboatão dos Guararapes|Brazil|-8.113|-35.015
+Hoji ya Henda|Angola|-8.805|13.290
+Las Vegas|United States|36.175|-115.137
+New South Memphis|United States|35.087|-90.057
+Hwaseong-si|South Korea|37.207|126.817
+Gold Coast|Australia|-28.000|153.431
+Łódź|Poland|51.771|19.474
+Jeonju|South Korea|35.822|127.149
+Chongming|China|31.619|121.696
+Al Aḩmadī|Kuwait|29.077|48.084
+Cuenca|Ecuador|-2.895|-78.996
+Chisinau|Moldova|47.009|28.859
+Likasi|Democratic Republic of the Congo|-10.983|26.738
+Jambi City|Indonesia|-1.600|103.617
+Hebi|China|35.732|114.286
+Comilla|Bangladesh|23.462|91.185
+Tshikapa|Democratic Republic of the Congo|-6.416|20.800
+Chunian|Pakistan|30.966|73.979
+Kochi|India|9.940|76.260
+Memphis|United States|35.150|-90.049
+Jingmen|China|31.034|112.205
+Barnaul|Russia|53.362|83.728
+Piura|Peru|-5.182|-80.657
+Siping|China|43.161|124.378
+Bhilai|India|21.209|81.428
+Ndola|Zambia|-12.959|28.637
+Contagem|Brazil|-19.932|-44.054
+Ulyanovsk|Russia|54.328|48.387
+Djibouti|Djibouti|11.589|43.145
+Glasgow|United Kingdom|55.865|-4.258
+Panshan|China|41.188|122.049
+Louisville|United States|38.254|-85.759
+Irkutsk|Russia|52.296|104.291
+Ansan-si|South Korea|37.324|126.822
+Al Mansurah|Egypt|31.036|31.381
+Kermanshah|Iran|34.314|47.065
+Jiaozhou|China|36.284|120.003
+Düsseldorf|Germany|51.223|6.779
+Suizhou|China|31.711|113.363
+Villa Nueva|Guatemala|14.525|-90.585
+Khabarovsk|Russia|48.462|135.097
+Cuiabá|Brazil|-15.596|-56.097
+Arusha|Tanzania|-3.367|36.683
+Feira de Santana|Brazil|-12.267|-38.967
+Las Piñas|Philippines|14.451|120.983
+Chizhou|China|30.661|117.478
+Coyoacán|Mexico|19.347|-99.162
+Stuttgart|Germany|48.782|9.177
+Ya'an|China|29.985|102.999
+Cuttack|India|20.465|85.879
+Borivli|India|19.235|72.860
+Chiclayo|Peru|-6.770|-79.855
+Yaroslavl|Russia|57.630|39.874
+Gothenburg|Sweden|57.707|11.967
+Kawaguchi|Japan|35.805|139.711
+Bukit Rahman Putra|Malaysia|3.217|101.561
+Jhang Sadr|Pakistan|31.270|72.317
+Ha'il|Saudi Arabia|27.522|41.691
+Bhavnagar|India|21.763|72.153
+Benoni|South Africa|-26.188|28.321
+Vladivostok|Russia|43.106|131.874
+Tuxtla|Mexico|16.754|-93.116
+Kryvyy Rih|Ukraine|47.906|33.394
+Sanming|China|26.249|117.619
+Islamabad|Pakistan|33.721|73.043
+Sāngli|India|16.854|74.564
+Jamnagar|India|22.473|70.067
+Lubango|Angola|-14.917|13.492
+Pokhara|Nepal|28.267|83.969
+Shuangyashan|China|46.677|131.133
+Borama|Somalia|9.936|43.183
+Pallabi|Bangladesh|23.825|90.370
+Luancheng|China|37.885|114.646
+Makhachkala|Russia|42.978|47.500
+Anyang-si|South Korea|37.392|126.927
+Huambo|Angola|-12.776|15.739
+Samarkand|Uzbekistan|39.655|66.964
+Mengzi|China|23.368|103.382
+Kagoshima|Japan|31.567|130.550
+Mukalla|Yemen|14.542|49.124
+Rasht|Iran|37.276|49.589
+Mar del Plata|Argentina|-38.000|-57.556
+Essen|Germany|51.457|7.012
+Al Maḩallah al Kubrá|Egypt|30.971|31.167
+Málaga|Spain|36.720|-4.420
+Shekhupura|Pakistan|31.713|73.986
+Yingkou|China|40.665|122.232
+Zhangzhou|China|24.513|117.656
+Reynosa|Mexico|26.080|-98.285
+Thuận An|Vietnam|10.924|106.714
+Dortmund|Germany|51.515|7.466
+Suginami|Japan|36.201|140.284
+Baltimore|United States|39.290|-76.612
+Itabashi|Japan|35.749|139.715
+New Kingston|Jamaica|18.007|-76.783
+Pelentong|Malaysia|1.524|103.824
+Cimahi|Indonesia|-6.872|107.543
+Londrina|Brazil|-23.310|-51.163
+Bucaramanga|Colombia|7.125|-73.119
+Genoa|Italy|44.405|8.944
+Hachiōji|Japan|35.656|139.324
+Nha Trang|Vietnam|12.245|109.194
+Malacca|Malaysia|2.196|102.240
+Kerman|Iran|30.283|57.079
+Orūmīyeh|Iran|37.553|45.076
+Bahçelievler|Turkey|41.002|28.860
+Tanta|Egypt|30.788|31.002
+Jammu|India|32.735|74.862
+Iskandar Puteri|Malaysia|1.393|103.623
+Calamba|Philippines|14.212|121.165
+Tlalpan|Mexico|19.295|-99.162
+Herāt|Afghanistan|34.348|62.200
+Dongsheng|China|39.816|109.978
+Gujrat|Pakistan|32.574|74.075
+Tomsk|Russia|56.500|84.982
+Umraniye|Turkey|41.016|29.125
+Shihezi|China|44.302|86.037
+South Boston|United States|42.333|-71.049
+Nakuru|Kenya|-0.307|36.072
+Hamilton|Canada|43.250|-79.850
+Irbid|Jordan|32.556|35.850
+Manchester|United Kingdom|53.481|-2.237
+Kota Bharu|Malaysia|6.124|102.243
+Surrey|Canada|49.106|-122.825
+Meknes|Morocco|33.894|-5.547
+Puente Alto|Chile|-33.612|-70.576
+Nyala|Sudan|12.049|24.881
+Xinmin|China|41.991|122.825
+Dresden|Germany|51.051|13.738
+Orenburg|Russia|51.767|55.099
+Albuquerque|United States|35.084|-106.651
+Bokāro|India|23.669|86.152
+Asmara|Eritrea|15.338|38.932
+Sukkur|Pakistan|27.703|68.859
+Milwaukee|United States|43.039|-87.906
+Chợ Lớn|Vietnam|10.753|106.659
+Wenchang|China|19.552|110.803
+Ile-Ife|Nigeria|7.482|4.560
+Gombe|Nigeria|10.290|11.167
+Hamhŭng|North Korea|39.918|127.536
+Kemerovo|Russia|55.354|86.104
+Nasiriyah|Iraq|31.058|46.257
+Bloemfontein|South Africa|-29.121|26.214
+Sheffield|United Kingdom|53.383|-1.466
+Santiago de Cuba|Cuba|20.023|-75.822
+Cuautitlán Izcalli|Mexico|19.644|-99.216
+Benguela|Angola|-12.577|13.403
+Chuxiong|China|25.036|101.546
+Balbala|Djibouti|11.562|43.107
+Huaihua|China|27.563|110.004
+Sishui|China|35.649|117.276
+Muntinlupa|Philippines|14.390|121.047
+Bình Thạnh|Vietnam|10.811|106.706
+Zahedan|Iran|29.496|60.863
+Banqiao|Taiwan|25.014|121.467
+Nanded|India|19.160|77.315
+Kozhikode|India|11.248|75.780
+Ulanqab|China|40.993|113.133
+Pristina|Kosovo|42.673|21.167
+Cabinda|Angola|-5.562|12.195
+Ajegunle|Nigeria|6.452|3.331
+Jiamusi|China|46.797|130.311
+Korla|China|41.761|86.152
+Kolhāpur|India|16.696|74.232
+Porto Velho|Brazil|-8.762|-63.904
+San Miguel de Tucumán|Argentina|-26.816|-65.211
+Kuantan|Malaysia|3.808|103.326
+Sevastopol|Ukraine|44.608|33.521
+Nellore|India|14.450|79.987
+Mirpur Model Thana|Bangladesh|23.809|90.361
+Bremen|Germany|53.076|8.807
+Wanning|China|18.799|110.384
+Owerri|Nigeria|5.484|7.033
+Kota Kuala Muda|Malaysia|5.588|100.371
+Sungai Petani|Malaysia|5.647|100.488
+Xinzhou|China|38.409|112.733
+Kotō|Japan|32.779|130.745
+Kalaburagi|India|17.336|76.838
+Tucson|United States|32.222|-110.926
+Selayang Baru Utara|Malaysia|3.255|101.667
+Vilnius|Lithuania|54.689|25.280
+Ajmer|India|26.452|74.639
+Pingdu|China|36.784|119.946
+Fresno|United States|36.748|-119.772
+Mbeya|Tanzania|-8.900|33.450
+Juiz de Fora|Brazil|-21.764|-43.350
+Calabar|Nigeria|4.959|8.327
+Oujda|Morocco|34.681|-1.909
+Novokuznetsk|Russia|53.758|87.136
+Ryazan’|Russia|54.627|39.704
+Ji’an|China|27.117|114.979
+Sahiwal|Pakistan|30.666|73.102
+Mersin|Turkey|36.812|34.639
+Nilüfer|Turkey|40.214|28.916
+Leeds|United Kingdom|53.796|-1.548
+Poznań|Poland|52.407|16.930
+Aqsu|China|41.184|80.279
+Ebute Ikorodu|Nigeria|6.601|3.488
+Ananindeua|Brazil|-1.366|-48.372
+Tanggu|China|39.021|117.647
+Pasir Gudang|Malaysia|1.462|103.905
+Astrakhan|Russia|46.350|48.041
+Okara|Pakistan|30.810|73.452
+Nansana|Uganda|0.364|32.529
+Kimhae|South Korea|35.234|128.881
+Ar Raqqah|Syria|35.953|39.008
+Québec|Canada|46.812|-71.215
+Cuauhtémoc|Mexico|19.445|-99.146
+Shangluo|China|33.867|109.931
+Himeji|Japan|34.817|134.700
+Ibagué|Colombia|4.436|-75.203
+Antwerp|Belgium|51.220|4.400
+Assiut|Egypt|27.181|31.184
+Hamadān|Iran|34.799|48.515
+Qionghai|China|19.242|110.464
+Aparecida de Goiânia|Brazil|-16.823|-49.244
+Cangzhou|China|38.311|116.853
+Mohammadpur|Bangladesh|24.898|88.528
+Surakarta|Indonesia|-7.556|110.832
+Yuanping|China|38.715|112.757
+San Salvador|El Salvador|13.689|-89.187
+Beihai|China|21.483|109.115
+Van|Turkey|38.495|43.383
+Sacramento|United States|38.582|-121.494
+Thủ Đức|Vietnam|10.849|106.772
+Üsküdar|Turkey|41.023|29.014
+Penza|Russia|53.196|45.011
+Mazār-e Sharīf|Afghanistan|36.709|67.111
+Kandahār|Afghanistan|31.613|65.710
+Hengshui|China|37.739|115.683
+Dehradun|India|30.324|78.034
+Erode|India|11.343|77.727
+Lyon|France|45.749|4.848
+Salta|Argentina|-24.806|-65.420
+Serra|Brazil|-20.129|-40.308
+Esenler|Turkey|41.044|28.876
+Daxing’anling|China|52.334|124.712
+Qui Nhon|Vietnam|13.776|109.224
+Al Fayyum|Egypt|29.310|30.842
+Durgapur|India|23.516|87.308
+Utsunomiya|Japan|36.567|139.883
+Victoria de Durango|Mexico|24.020|-104.658
+Belford Roxo|Brazil|-22.764|-43.399
+Lisbon|Portugal|38.725|-9.150
+Rahim Yar Khan|Pakistan|28.420|70.303
+Ulhasnagar|India|19.217|73.150
+Guangyuan|China|32.442|105.823
+Loni|India|28.751|77.290
+Siliguri|India|26.710|88.429
+Nuremberg|Germany|49.454|11.078
+Niterói|Brazil|-22.883|-43.104
+Ujjain|India|23.182|75.776
+Hannover|Germany|52.371|9.733
+Edinburgh|United Kingdom|55.952|-3.196
+Macapá|Brazil|0.039|-51.066
+Xianning|China|29.843|114.322
+Toulouse|France|43.604|1.444
+Thembisa|South Africa|-25.996|28.227
+Carrefour|Haiti|18.533|-72.400
+Matsuyama|Japan|33.839|132.766
+Bilimora|India|20.770|72.961
+Kasur|Pakistan|31.119|74.450
+Atlanta|United States|33.749|-84.388
+Heroica Matamoros|Mexico|25.880|-97.504
+Makati City|Philippines|14.550|121.033
+Buda|Hungary|47.500|19.033
+Tonghua|China|41.720|125.926
+Mianzhu, Deyang, Sichuan|China|31.338|104.221
+Naberezhnyye Chelny|Russia|55.737|52.420
+Lipetsk|Russia|52.588|39.552
+Kikwit|Democratic Republic of the Congo|-5.041|18.816
+Florianópolis|Brazil|-27.597|-48.549
+Banan|China|29.379|106.540
+Newcastle|Australia|-32.930|151.780
+Tuen Mun|Hong Kong|22.392|113.972
+Zhangye|China|38.934|100.452
+Kirov|Russia|58.598|49.658
+Kashgar|China|39.467|75.987
+Mukim Pulai|Malaysia|1.533|103.667
+Najrān|Saudi Arabia|17.493|44.128
+Karol Bāgh|India|28.651|77.191
+Zhoukou|China|33.633|114.633
+Leipzig|Germany|51.340|12.371
+Pingliang|China|35.539|106.686
+Kalininskiy|Russia|59.997|30.390
+Duisburg|Germany|51.432|6.765
+Āsansol|India|23.683|86.983
+Skopje|North Macedonia|41.996|21.431
+Juba|South Sudan|4.852|31.582
+Bissau|Guinea-Bissau|11.864|-15.598
+Bratislava|Slovakia|48.148|17.107
+Tirana|Albania|41.327|19.819
+San Juan|Puerto Rico|18.466|-66.106
+Panama City|Panama|8.994|-79.520
+Tallinn|Estonia|59.437|24.754
+Windhoek|Namibia|-22.559|17.083
+Wellington|New Zealand|-41.287|174.776
+Canberra|Australia|-35.283|149.128
+Maseru|Lesotho|-29.317|27.483
+Doha|Qatar|25.285|51.531
+San José|Costa Rica|9.934|-84.085
+New Delhi|India|28.621|77.215
+Port Moresby|Papua New Guinea|-9.477|147.151
+Yamoussoukro|Ivory Coast|6.821|-5.277
+Ljubljana|Slovenia|46.051|14.505
+Porto-Novo|Benin|6.496|2.604
+Gaborone|Botswana|-24.655|25.909
+Podgorica|Montenegro|42.441|19.263
+Georgetown|Guyana|6.804|-58.155
+Nassau|Bahamas|25.058|-77.343
+Sucre|Bolivia|-19.033|-65.263
+Paramaribo|Suriname|5.866|-55.167
+Nicosia|Cyprus|35.173|33.354
+Port Louis|Mauritius|-20.162|57.499
+Saint-Denis|Reunion|-20.882|55.450
+Dili|Timor Leste|-8.559|125.574
+Manama|Bahrain|26.228|50.586
+Praia|Cabo Verde|14.932|-23.513
+Willemstad|Curacao|12.122|-68.886
+Bern|Switzerland|46.948|7.447
+Reykjavík|Iceland|64.135|-21.895
+Male|Maldives|4.175|73.509
+Thimphu|Bhutan|27.466|89.642
+Bridgetown|Barbados|13.107|-59.620
+Nouméa|New Caledonia|-22.274|166.449
+Fort-de-France|Martinique|14.604|-61.074
+Suva|Fiji|-18.137|178.425
+Luxembourg|Luxembourg|49.610|6.133
+Mbabane|Eswatini|-26.317|31.133
+Moroni|Comoros|-11.702|43.255
+Gitega|Burundi|-3.427|29.925
+Bandar Seri Begawan|Brunei|4.890|114.940
+Cayenne|French Guiana|4.938|-52.335
+Kuwait City|Kuwait|29.367|47.974
+Honiara|Solomon Islands|-9.433|159.950
+Mamoudzou|Mayotte|-12.782|45.229
+São Tomé|Sao Tome and Principe|0.338|6.730
+Saint John’s|Antigua and Barbuda|17.121|-61.843
+Port of Spain|Trinidad and Tobago|10.667|-61.519
+Saipan|Northern Mariana Islands|15.212|145.755
+Apia|Samoa|-13.833|-171.767
+Tarawa|Kiribati|1.328|172.977
+Banjul|Gambia|13.453|-16.578
+Port-Vila|Vanuatu|-17.736|168.314
+Monaco|Monaco|43.737|7.421
+Oranjestad|Aruba|12.524|-70.027
+George Town|Cayman Islands|19.287|-81.374
+Saint Helier|Jersey|49.188|-2.105
+Gibraltar|Gibraltar|36.145|-5.353
+Papeete|French Polynesia|-17.535|-149.568
+Douglas|Isle of Man|54.150|-4.483
+Majuro|Marshall Islands|7.090|171.380
+Kingstown|Saint Vincent and the Grenadines|13.155|-61.227
+Victoria|Seychelles|-4.620|55.455
+Nuku‘alofa|Tonga|-21.137|-175.201
+Andorra la Vella|Andorra|42.508|1.521
+Charlotte Amalie|U.S. Virgin Islands|18.342|-64.931
+Castries|Saint Lucia|13.996|-61.006
+Roseau|Dominica|15.302|-61.388
+Saint Peter Port|Guernsey|49.460|-2.535
+Nuuk|Greenland|64.183|-51.722
+Belmopan|Belize|17.254|-88.764
+Avarua|Cook Islands|-21.207|-159.775
+Tórshavn|Faroe Islands|62.010|-6.772
+Basseterre|Saint Kitts and Nevis|17.296|-62.725
+Pago Pago|American Samoa|-14.278|-170.702
+Basse-Terre|Guadeloupe|15.997|-61.732
+Mariehamn|Aland Islands|60.097|19.935
+Kralendijk|Bonaire, Saint Eustatius and Saba |12.150|-68.267
+Road Town|British Virgin Islands|18.427|-64.621
+Saint George's|Grenada|12.053|-61.752
+Palikir|Micronesia|6.925|158.161
+Valletta|Malta|35.900|14.515
+Funafuti|Tuvalu|-8.524|179.194
+Saint-Pierre|Saint Pierre and Miquelon|46.779|-56.177
+Gustavia|Saint Barthelemy|17.896|-62.850
+Marigot|Saint Martin|18.068|-63.083
+Vaduz|Liechtenstein|47.142|9.522
+San Marino|San Marino|43.937|12.446
+Cockburn Town|Turks and Caicos Islands|21.461|-71.142
+Longyearbyen|Svalbard and Jan Mayen|78.223|15.647
+Stanley|Falkland Islands|-51.694|-57.857
+The Valley|Anguilla|18.217|-63.058
+Ciudad de la Paz|Equatorial Guinea|1.593|10.824
+Philipsburg|Sint Maarten|18.026|-63.046
+Flying Fish Cove|Christmas Island|-10.422|105.679
+Mata-Utu|Wallis and Futuna|-13.282|-176.175
+Yaren|Nauru|-0.551|166.925
+Hagåtña|Guam|13.476|144.749
+Hamilton|Bermuda|32.295|-64.783
+Kingston|Norfolk Island|-29.055|167.966
+Vatican City|Vatican|41.903|12.454
+Jamestown|Saint Helena|-15.925|-5.718
+Alofi|Niue|-19.053|-169.920
+West Island|Cocos Islands|-12.157|96.823
+Adamstown|Pitcairn|-25.066|-130.101
+Port-aux-Français|French Southern Territories|-49.349|70.219
+Grytviken|South Georgia and the South Sandwich Islands|-54.281|-36.509
+Plymouth|Montserrat|16.706|-62.213
+Ngerulmud|Palau|7.501|134.624

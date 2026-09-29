@@ -4,6 +4,10 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Automatic schedule: offline NOAA sunrise/sunset, wake-time aware day start, smooth mired-space transitions,
+  day/evening/night warmth, optional night brightness ceiling, fixed-times mode, f.lux-style overrides until the next
+  phase, "Automatic schedule" / "Return to schedule" in the tray, re-evaluated on clock/time-zone changes.
+- Embedded offline city list (1,305 cities incl. all capitals; GeoNames, CC BY 4.0) with accent-insensitive search.
 - Global hotkeys (`Win+Alt+…`, rebindable, conflicts reported in the tooltip), with the panic hotkey registered first.
 - On-screen display (Direct2D/DirectWrite) for brightness, warmth, scenes and pause, following the light/dark theme.
 - Pause (1 hour / until resumed), panic restore, scene cycling; tray Scenes and Pause menus; `--scene`, `--pause`,

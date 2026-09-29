@@ -7,7 +7,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 | # | PR | Scope | Status |
 |---|---|---|---|
 | 1 | docs: product specification | `PRODUCT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `DECISIONS.md`, research | ✅ |
-| 2 | feat: project skeleton | Cargo setup, size-optimized profile, CI, message loop, single instance, tray icon, logging, `--reset` | ⬜ |
+| 2 | feat: project skeleton | Cargo setup, size-optimized profile, CI, message loop, single instance, tray icon, logging, `--reset` | ✅ |
 | 3 | feat: monitors + gamma engine | Monitor enumeration, Kelvin math, gamma ramps with range fallback, identity reset | ⬜ |
 | 4 | feat: overlay dimming | Capture-excluded click-through overlays, z-order keeping | ⬜ |
 | 5 | feat: hardware brightness | DDC/CI + laptop panel IOCTL on a worker thread; hybrid pipeline split | ⬜ |

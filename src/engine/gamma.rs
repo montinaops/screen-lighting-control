@@ -1,8 +1,11 @@
 //! Per-monitor gamma ramps (`SetDeviceGammaRamp`) with automatic fallback when Windows rejects a ramp
 //! for deviating too far from identity (the `GdiICMGammaRange` limit).
 
+use super::{Event, Events};
 use crate::color::{self, Ramp};
 use crate::win;
+use crate::worker::Mailbox;
+use std::sync::Arc;
 use windows::core::PCWSTR;
 use windows::Win32::Graphics::Gdi::{CreateDCW, DeleteDC, HDC};
 use windows::Win32::UI::ColorSystem::{GetDeviceGammaRamp, SetDeviceGammaRamp};
@@ -153,6 +156,68 @@ pub fn apply(device: &str, kelvin: u32, scale: f32, st: &mut State) -> Applied {
         st.bound = deviation(white, result.scale, result.warmth);
     }
     result
+}
+
+/// A gamma write for one monitor.
+pub struct Job {
+    pub gen: u64,
+    pub device: String,
+    pub kelvin: u32,
+    pub scale: f32,
+}
+
+/// Applies ramps off the UI thread (`SetDeviceGammaRamp` can block for a vsync per call).
+pub struct Worker {
+    mailbox: Arc<Mailbox<Job>>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+
+impl Worker {
+    pub fn start(events: Events) -> Worker {
+        let mailbox: Arc<Mailbox<Job>> = Arc::new(Mailbox::default());
+        let mb = mailbox.clone();
+        let thread = std::thread::Builder::new()
+            .name("slc-gamma".into())
+            .spawn(move || {
+                let mut states: Vec<State> = Vec::new();
+                let mut gen = u64::MAX;
+                while let Some(jobs) = mb.take(std::time::Duration::ZERO) {
+                    for (index, job) in jobs {
+                        if job.gen != gen {
+                            gen = job.gen;
+                            states.clear();
+                        }
+                        if states.len() <= index {
+                            states.resize(index + 1, State::default());
+                        }
+                        let applied = apply(&job.device, job.kelvin, job.scale, &mut states[index]);
+                        events.send(Event::Gamma {
+                            gen: job.gen,
+                            index,
+                            kelvin: job.kelvin,
+                            scale: job.scale,
+                            applied,
+                            bound: states[index].bound,
+                        });
+                    }
+                }
+            })
+            .ok();
+        Worker { mailbox, thread }
+    }
+
+    pub fn submit(&self, index: usize, job: Job) {
+        self.mailbox.put(index, job);
+    }
+}
+
+impl Drop for Worker {
+    fn drop(&mut self) {
+        self.mailbox.quit();
+        if let Some(t) = self.thread.take() {
+            let _ = t.join();
+        }
+    }
 }
 
 /// Restores the neutral (identity) ramp. Returns false if the device rejected it.

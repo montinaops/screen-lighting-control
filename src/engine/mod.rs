@@ -2,10 +2,49 @@
 //! into a hardware level, a gamma scale and an overlay opacity.
 
 pub mod gamma;
+pub mod hardware;
 pub mod overlay;
 
 use crate::info;
 use crate::monitors::Monitor;
+use std::sync::{Arc, Mutex};
+
+/// Results coming back from the worker threads to the UI thread.
+#[derive(Debug)]
+pub enum Event {
+    Gamma { gen: u64, index: usize, kelvin: u32, scale: f32, applied: gamma::Applied, bound: f32 },
+    HardwareProbed { gen: u64, caps: Vec<Option<hardware::Caps>> },
+    HardwareSet { gen: u64, index: usize, ok: bool },
+}
+
+/// Thread-safe event queue that wakes the UI thread with a posted message.
+#[derive(Clone)]
+pub struct Events {
+    queue: Arc<Mutex<Vec<Event>>>,
+    /// Target window (HWND as isize, so the queue is Send).
+    hwnd: isize,
+    msg: u32,
+}
+
+impl Events {
+    pub fn new(hwnd: windows::Win32::Foundation::HWND, msg: u32) -> Self {
+        Events { queue: Arc::default(), hwnd: hwnd.0 as isize, msg }
+    }
+
+    pub fn send(&self, e: Event) {
+        let mut q = self.queue.lock().unwrap_or_else(|e| e.into_inner());
+        let was_empty = q.is_empty();
+        q.push(e);
+        drop(q);
+        if was_empty {
+            crate::win::post(windows::Win32::Foundation::HWND(self.hwnd as *mut _), self.msg, 0, 0);
+        }
+    }
+
+    pub fn drain(&self) -> Vec<Event> {
+        std::mem::take(&mut *self.queue.lock().unwrap_or_else(|e| e.into_inner()))
+    }
+}
 
 pub const MIN_BRIGHTNESS: f32 = 1.0;
 pub const MAX_BRIGHTNESS: f32 = 100.0;

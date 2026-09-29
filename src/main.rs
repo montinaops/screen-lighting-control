@@ -12,6 +12,7 @@ mod log;
 mod monitors;
 mod tray;
 mod win;
+mod worker;
 
 use cli::Command;
 use windows::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS};
@@ -140,8 +141,9 @@ fn self_test() -> i32 {
     println!("SLC {VERSION} self-test: {} monitor(s)", mons.len());
     for (i, m) in mons.iter().enumerate() {
         let ramp = engine::gamma::read(&m.device);
+        let hw = engine::hardware::read(m.hmon, m.internal);
         println!(
-            "  #{} {} [{}] {}x{} primary={} internal={} hdr={} gamma={}",
+            "  #{} {} [{}] {}x{} primary={} internal={} hdr={} gamma={} hardware={}",
             i + 1,
             m.name,
             m.device,
@@ -150,7 +152,11 @@ fn self_test() -> i32 {
             m.primary,
             m.internal,
             m.hdr,
-            if ramp.is_some() { "readable" } else { "unavailable" }
+            if ramp.is_some() { "readable" } else { "unavailable" },
+            match hw {
+                Some(c) => format!("{:?} {:.0}%", c.kind, c.current),
+                None => "none".into(),
+            }
         );
     }
     // Gamma probe: apply a strong warm + dim ramp for a moment, report what Windows accepted, restore.

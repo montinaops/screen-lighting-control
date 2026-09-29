@@ -21,10 +21,14 @@ slc.exe (GUI subsystem, per-monitor-DPI-aware v2)
 │    ├── flyout window (Direct2D)
 │    ├── settings window (Direct2D)
 │    └── OSD window (Direct2D)
-└── hardware worker thread ─ DDC/CI + panel IOCTL (slow, blocking I/O), fed by a latest-value-wins mailbox
+├── hardware worker thread ─ DDC/CI + panel IOCTL (slow, blocking I/O), debounced 250 ms
+└── gamma worker thread ─ SetDeviceGammaRamp (can block up to one vsync per call)
 ```
 
-Everything except hardware I/O runs on the UI thread. No async runtime. Timers use `SetTimer` (coalesced).
+Both workers are fed by a latest-value-wins `worker::Mailbox` and report back through `engine::Events`
+(a queue plus a `WM_APP_ENGINE` post). The UI thread **predicts** the gamma result with `gamma::plan` and the learned
+bound, so the overlay is right at once, then corrects it if the worker reports something different.
+Worker results carry a monitor-list generation; stale results are ignored. Everything else runs on the UI thread. No async runtime. Timers use `SetTimer` (coalesced).
 
 ## 3. Module layout (`src/`)
 

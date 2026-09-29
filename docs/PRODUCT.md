@@ -94,6 +94,11 @@ One brightness value **B** (1–100%) per monitor is split across three stages, 
   - they are **debounced** (latest value wins, written 250 ms after the last change);
   - schedule-driven changes are written at most **once per 60 s** per monitor, and only if the value changed.
 - The original hardware brightness is read and remembered at first run; "Reset" and uninstall restore it.
+- **Starting SLC never changes the screen**: the first time a monitor is seen, SLC adopts its current backlight level
+  as the brightness value (`B = knee + current × H`).
+- External monitors use the low-level VCP 0x10 calls (`Get/SetVCPFeature`), which more monitors support than the
+  high-level MCCS brightness API. Each call is retried once, since some monitors drop the first command after idling.
+  Measured probe time: ~140 ms for 2 monitors.
 - Monitors that don't answer DDC/CI are marked *software-only* and never retried until the display configuration changes.
 
 ### 4.3 Overlay behavior
@@ -285,7 +290,7 @@ slc.exe --pause 60                           (roadmap v1.1)
 | Idle CPU | ~0% (no polling except the 5 s gamma check and the 30 s schedule tick) |
 | Memory (idle, flyout closed) | < 10 MB working set |
 | Slider → visible change (gamma/overlay) | < 16 ms |
-| Threads | UI thread + 1 hardware worker (DDC/CI) |
+| Threads | UI thread + hardware worker (DDC/CI, panel) + gamma worker (`SetDeviceGammaRamp` blocks up to a vsync) |
 
 ---
 

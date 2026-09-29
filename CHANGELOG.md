@@ -4,6 +4,11 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Hardware brightness stage: DDC/CI (VCP 0x10, with retry) for external monitors and the display-brightness IOCTL for
+  laptop panels, on a debounced worker thread; SLC adopts each monitor's current backlight on first sight.
+- Gamma writes moved to a worker thread; overlay opacity predicted from the learned bound and corrected on completion.
+- Per-monitor brightness with a master control that keeps relative offsets; `--set brightness=N monitor=M`.
+- `--self-test` reports hardware brightness support and the current level.
 - Overlay dimming stage: per-monitor click-through, topmost, layered black windows, **excluded from screen capture**
   (`WDA_EXCLUDEFROMCAPTURE`), re-raised on foreground changes, destroyed at 0% so undimmed monitors cost nothing.
 - Pipeline wiring: brightness → gamma (as far as Windows allows) → overlay for the rest; redundant gamma writes skipped.

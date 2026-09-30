@@ -146,9 +146,6 @@ impl MenuItem {
     pub fn check(id: u32, text: &str, checked: bool) -> Self {
         MenuItem::Item { id, text: text.into(), checked, enabled: true }
     }
-    pub fn disabled(id: u32, text: &str) -> Self {
-        MenuItem::Item { id, text: text.into(), checked: false, enabled: false }
-    }
 }
 
 unsafe fn build(items: &[MenuItem]) -> windows::core::Result<windows::Win32::UI::WindowsAndMessaging::HMENU> {

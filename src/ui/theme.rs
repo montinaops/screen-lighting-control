@@ -69,6 +69,31 @@ pub fn system_light() -> bool {
     ok.is_ok() && v != 0
 }
 
+/// Makes standard Win32 popup menus (the tray menu) follow the theme. Uses uxtheme's app-mode
+/// switch (ordinals 135/136: SetPreferredAppMode / FlushMenuThemes, Windows 10 1903+), the same
+/// mechanism Explorer and Notepad++ use; silently does nothing where it isn't available.
+pub fn apply_menu_theme(theme: model::Theme) {
+    use windows::core::PCSTR;
+    use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryW};
+    // PreferredAppMode: 1 = AllowDark (follow system), 2 = ForceDark, 3 = ForceLight.
+    let mode: i32 = match theme {
+        model::Theme::System => 1,
+        model::Theme::Dark => 2,
+        model::Theme::Light => 3,
+    };
+    unsafe {
+        let Ok(ux) = LoadLibraryW(w!("uxtheme.dll")) else { return };
+        if let Some(f) = GetProcAddress(ux, PCSTR(135 as *const u8)) {
+            let set: extern "system" fn(i32) -> i32 = std::mem::transmute(f);
+            set(mode);
+        }
+        if let Some(f) = GetProcAddress(ux, PCSTR(136 as *const u8)) {
+            let flush: extern "system" fn() = std::mem::transmute(f);
+            flush();
+        }
+    }
+}
+
 pub fn palette(theme: model::Theme) -> Palette {
     match theme {
         model::Theme::Light => LIGHT,

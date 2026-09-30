@@ -28,6 +28,8 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 
 // Context-menu command ids.
 const CMD_EXIT: u32 = 1;
+const CMD_OPEN_PANEL: u32 = 10;
+const CMD_SETTINGS: u32 = 11;
 const CMD_RESET: u32 = 2;
 /// Warmth presets: CMD_KELVIN_BASE + index into `color::PRESETS`.
 const CMD_KELVIN_BASE: u32 = 100;
@@ -374,6 +376,7 @@ impl App {
             app.gamma_worker = Some(gamma::Worker::start(events.clone()));
             app.hw_worker = Some(hardware::Worker::start(events.clone()));
             app.events = Some(events);
+            theme::apply_menu_theme(app.settings.theme);
             app.tray = Some(Tray::new(hwnd));
             app.flyout = Flyout::create(hwnd, theme::palette(app.settings.theme));
             app.update_schedule(true);
@@ -403,6 +406,9 @@ impl App {
                         "SLC did not close properly last time, so your screens were reset to neutral colors.",
                     );
                 }
+            }
+            if let Some(r) = app.tray.as_ref().and_then(|t| t.rect()) {
+                info!("tray icon at {},{} {}x{}", r.left, r.top, r.right - r.left, r.bottom - r.top);
             }
             info!("controller window created");
             Ok(app)
@@ -1386,6 +1392,7 @@ impl App {
         if !self.capturing && (hotkeys_before != self.settings.hotkeys || scene_keys_before != scene_keys) {
             self.register_hotkeys();
         }
+        theme::apply_menu_theme(self.settings.theme);
         if autostart_before != self.settings.autostart {
             crate::install::set_autostart(self.settings.autostart);
         }
@@ -1618,13 +1625,16 @@ impl App {
 
     fn on_tray(&mut self, event: u32, anchor: POINT) {
         match event {
-            WM_CONTEXTMENU | WM_RBUTTONUP => {
+            // WM_RBUTTONUP is followed by WM_CONTEXTMENU for the same click: use only the latter.
+            WM_CONTEXTMENU => {
                 if let Some(f) = self.flyout.as_mut() {
                     f.hide();
                 }
                 self.show_menu(anchor)
             }
-            e if e == NIN_SELECT || e == NIN_KEYSELECT || e == WM_LBUTTONUP => self.toggle_flyout(),
+            // One left click delivers both WM_LBUTTONUP and NIN_SELECT (NOTIFYICON_VERSION_4): react to
+            // NIN_SELECT only, or the flyout would open and immediately close again.
+            e if e == NIN_SELECT || e == NIN_KEYSELECT => self.toggle_flyout(),
             WM_MOUSEMOVE => self.on_tray_hover(),
             _ => {}
         }
@@ -1669,7 +1679,8 @@ impl App {
             }
         };
         let items = vec![
-            MenuItem::disabled(0, "Screen Lighting Control"),
+            MenuItem::item(CMD_OPEN_PANEL, "Open Screen Lighting Control"),
+            MenuItem::item(CMD_SETTINGS, "Settings…"),
             MenuItem::Separator,
             MenuItem::Sub { text: "Brightness".into(), items: brightness },
             MenuItem::Sub { text: "Warmth".into(), items: warmth },
@@ -1701,6 +1712,12 @@ impl App {
                 let _ = DestroyWindow(self.hwnd);
             },
             CMD_RESET => self.reset(),
+            CMD_OPEN_PANEL => {
+                if !self.flyout.as_ref().is_some_and(|f| f.visible()) {
+                    self.toggle_flyout();
+                }
+            }
+            CMD_SETTINGS => self.open_settings(),
             CMD_PAUSE_HOUR => self.pause(Some(60)),
             CMD_PAUSE_FOREVER => self.pause(None),
             CMD_RESUME => self.resume(),
@@ -1952,6 +1969,7 @@ impl App {
                     String::new()
                 };
                 if name == "ImmersiveColorSet" {
+                    theme::apply_menu_theme(self.settings.theme);
                     let pal = theme::palette(self.settings.theme);
                     if let Some(o) = self.osd.as_mut() {
                         o.set_palette(pal);

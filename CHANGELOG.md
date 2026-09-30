@@ -4,6 +4,17 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-09-30
+
+### Fixed
+- Left-clicking the tray icon opened the panel and closed it again right away (Windows sends two notifications per
+  click; SLC toggled on both). The panel now opens on click and closes on the next click, Esc or clicking elsewhere.
+- Right-click could open the menu twice for one click.
+
+### Added
+- Tray menu: **Open Screen Lighting Control** and **Settings…** at the top.
+- The tray menu follows the light/dark theme instead of always being white.
+
 ## [1.3.3] - 2026-09-30
 
 ### Changed

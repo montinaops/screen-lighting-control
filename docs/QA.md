@@ -35,6 +35,7 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 
 ## UI
 - ✅ Tray icon, tooltip, context menu, paused/darkroom glyphs
+- ✅ 1.3.4: **real mouse clicks** on the tray icon: left click opens the flyout, second click closes it; right click shows the dark menu with Open / Settings… (earlier tests opened the flyout only via a second launch, which hid the double-toggle bug)
 - ✅ Flyout opens above the tray, updates live, closes on focus loss; deep-dim banner counts down and reverts to 5%
 - ✅ Settings: all six pages render; wrapped descriptions; Identify shows numbers
 - ✅ OSD for brightness / warmth / scenes / pause

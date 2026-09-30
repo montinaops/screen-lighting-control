@@ -41,3 +41,21 @@ jobs:
         with:
           name: slc-${{ github.sha }}
           path: target/release/slc.exe
+
+  smoke:
+    # End-to-end run on a Windows 10-based and a Windows 11 (24H2)-based image.
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: slc-${{ github.sha }}
+          path: artifact
+      - name: Smoke test
+        shell: pwsh
+        run: ./scripts/smoke.ps1 -Exe artifact/slc.exe

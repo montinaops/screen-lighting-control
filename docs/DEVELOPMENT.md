@@ -41,6 +41,12 @@ scripts/cargo.sh fmt --all
 - `cargo test`
 - Release `slc.exe` ≤ 1 MiB (size budget from PRODUCT §14)
 
+## Smoke test (CI)
+`scripts/smoke.ps1 -Exe <slc.exe>` runs end to end on a clean machine: CLI, self-test, tray app start → commands →
+clean exit, `--reset`, and an install → uninstall round trip that must leave **nothing** behind (folders, shortcut,
+registry, autostart, process). CI runs it on `windows-2022` (Windows 10-based) and `windows-2025` (Windows 11 24H2-based).
+Don't run it on a machine where SLC is installed for real: the round trip uninstalls it.
+
 ## Branching and PRs
 - `feat/<name>`, `fix/<name>`, `docs/<name>`; one PR per roadmap item (see `ROADMAP.md`); squash-merge after CI passes.
 - Update `ROADMAP.md` status and `CHANGELOG.md` in the same PR.

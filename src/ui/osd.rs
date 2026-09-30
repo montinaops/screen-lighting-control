@@ -148,7 +148,7 @@ impl Osd {
             let text_w = WIDTH - text_x - 18.0;
             let (title, value, frac, fill) = match &content {
                 Content::Brightness(b) => {
-                    p.logo(cx, cy, 11.0, pal.accent, pal.surface, false);
+                    p.logo(cx, cy, 11.0, super::theme::logo_ink(&pal), pal.surface, false);
                     ("Brightness".to_string(), format!("{b:.0}%"), b / 100.0, pal.accent)
                 }
                 Content::Warmth(k) => {
@@ -161,7 +161,7 @@ impl Osd {
                     (format!("Warmth · {}", color::preset_name(*k)), format!("{k}K"), frac, pal.accent)
                 }
                 Content::Message(t, sub) => {
-                    p.logo(cx, cy, 11.0, pal.accent, pal.surface, false);
+                    p.logo(cx, cy, 11.0, super::theme::logo_ink(&pal), pal.surface, false);
                     p.text(
                         t,
                         Rect::new(text_x, 12.0, text_w, 24.0),

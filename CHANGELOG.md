@@ -4,6 +4,12 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-30
+
+### Changed
+- The eclipse mark now has a monochrome gradient, lit from the top-left: white → silver on dark surfaces, graphite →
+  near-black on light ones. The app icon tile goes from graphite at the top to near-black at the bottom.
+
 ## [1.4.0] - 2026-09-30
 
 ### Changed

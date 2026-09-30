@@ -330,8 +330,27 @@ impl Painter<'_> {
 
     /// The SLC mark (eclipse) of radius `r` at (cx, cy): a disc in `ink` partly covered by a disc in
     /// `bg` (the background it sits on). `full` draws the whole disc (a color filter is active).
-    pub fn logo(&self, cx: f32, cy: f32, r: f32, ink: Color, bg: Color, full: bool) {
-        self.circle(cx, cy, r, ink);
+    /// `ink` is a (top-left, bottom-right) gradient, like light falling on the moon.
+    pub fn logo(&self, cx: f32, cy: f32, r: f32, ink: (Color, Color), bg: Color, full: bool) {
+        let e = D2D1_ELLIPSE { point: Vector2 { X: cx, Y: cy }, radiusX: r, radiusY: r };
+        let stops = [
+            D2D1_GRADIENT_STOP { position: 0.0, color: ink.0 },
+            D2D1_GRADIENT_STOP { position: 1.0, color: ink.1 },
+        ];
+        let props = D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES {
+            startPoint: Vector2 { X: cx - r, Y: cy - r },
+            endPoint: Vector2 { X: cx + r, Y: cy + r },
+        };
+        let drawn = unsafe {
+            self.rt
+                .CreateGradientStopCollection(&stops, D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP)
+                .and_then(|coll| self.rt.CreateLinearGradientBrush(&props, None, &coll))
+                .map(|brush| self.rt.FillEllipse(&e, &brush))
+                .is_ok()
+        };
+        if !drawn {
+            self.circle(cx, cy, r, ink.0);
+        }
         if !full {
             self.circle(cx + r * 0.52, cy - r * 0.30, r * 0.86, bg);
         }

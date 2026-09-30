@@ -48,8 +48,8 @@ impl Tray {
         let dpi = unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(self.hwnd) }.max(96);
         let size = unsafe { GetSystemMetricsForDpi(SM_CXSMICON, dpi) }.max(16) as u32;
         // Windows draws tray icons on the taskbar: white on a dark taskbar, ink on a light one.
-        let color = if crate::ui::theme::taskbar_light() { crate::glyph::INK } else { crate::glyph::WHITE };
-        self.icon = icon::create(size, self.glyph, color);
+        let ink = if crate::ui::theme::taskbar_light() { crate::glyph::INK } else { crate::glyph::WHITE };
+        self.icon = icon::create(size, self.glyph, ink);
     }
 
     /// Adds the icon; also used after Explorer restarts ("TaskbarCreated").

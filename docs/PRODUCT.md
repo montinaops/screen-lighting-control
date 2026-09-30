@@ -200,7 +200,7 @@ Windows rejects gamma ramps that differ "too much" from identity unless the regi
 ### 8.0 Visual identity (1.4)
 - **Monotone and minimalist**: grayscale palettes; the strongest ink of each theme is the accent (white on dark,
   near-black on light). The only color in the UI is a muted hint of the actual warmth on the warmth slider/swatch.
-- **Mark**: an eclipse — a disc partly covered by a second disc (crescent). Full disc = a color filter is active;
+- **Mark**: an eclipse — a disc partly covered by a second disc (crescent). It carries a monochrome diagonal gradient (light from the top-left: #FFFFFF → #969696 on dark, #4A4A4A → #0A0A0A on light); the app tile is a vertical #3A3A3A → #080808 gradient. Full disc = a color filter is active;
   translucent = paused. Tray icon follows the taskbar theme (`SystemUsesLightTheme`); the app icon is a white crescent
   on a near-black rounded tile, generated at build time from the same code.
 - **Privacy**: the flyout never shows the configured city/country (safe while streaming or screen sharing).

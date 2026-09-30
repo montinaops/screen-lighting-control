@@ -217,6 +217,10 @@ pub struct Settings {
     pub bedtime_minutes: u32,
     /// Replace the system cursors with dimmed copies while the overlay dims the screen.
     pub dim_cursor: bool,
+    /// Follow the ambient light sensor (if the PC has one).
+    pub ambient: bool,
+    /// Learned offset (percentage points) added to the sensor curve.
+    pub ambient_offset: f32,
 }
 
 impl Default for Settings {
@@ -239,6 +243,8 @@ impl Default for Settings {
             bedtime_reminder: false,
             bedtime_minutes: 60,
             dim_cursor: false,
+            ambient: false,
+            ambient_offset: 0.0,
         }
     }
 }
@@ -371,6 +377,9 @@ impl Settings {
         s.idle_dim = ini.get_bool("general", "idle_dim").unwrap_or(false);
         s.eye_breaks = ini.get_bool("general", "eye_breaks").unwrap_or(false);
         s.dim_cursor = ini.get_bool("general", "dim_cursor").unwrap_or(false);
+        s.ambient = ini.get_bool("general", "ambient").unwrap_or(false);
+        s.ambient_offset =
+            ini.get_parse::<f32>("general", "ambient_offset").unwrap_or(0.0).clamp(-50.0, 50.0);
         s.bedtime_reminder = ini.get_bool("general", "bedtime_reminder").unwrap_or(false);
         s.bedtime_minutes = ini.get_parse::<u32>("general", "bedtime_minutes").unwrap_or(60).clamp(10, 180);
         s.idle_minutes = ini.get_parse::<u32>("general", "idle_minutes").unwrap_or(5).clamp(1, 60);
@@ -409,6 +418,8 @@ impl Settings {
         ini.set("general", "idle_dim", self.idle_dim as u8);
         ini.set("general", "eye_breaks", self.eye_breaks as u8);
         ini.set("general", "dim_cursor", self.dim_cursor as u8);
+        ini.set("general", "ambient", self.ambient as u8);
+        ini.set("general", "ambient_offset", format!("{:.0}", self.ambient_offset));
         ini.set("general", "bedtime_reminder", self.bedtime_reminder as u8);
         ini.set("general", "bedtime_minutes", self.bedtime_minutes);
         ini.set("general", "idle_minutes", self.idle_minutes);
@@ -510,6 +521,8 @@ mod tests {
         s.idle_level = 20.0;
         s.eye_breaks = true;
         s.dim_cursor = true;
+        s.ambient = true;
+        s.ambient_offset = -10.0;
         s.bedtime_reminder = true;
         s.bedtime_minutes = 45;
         s.rules = vec![

@@ -72,6 +72,8 @@ pub struct View {
     pub current_brightness: f32,
     pub current_kelvin: u32,
     pub recent_apps: Vec<String>,
+    pub sensor_available: bool,
+    pub lux: Option<f32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,6 +117,8 @@ enum Id {
     Theme(u8),
     MonEnabled(usize),
     MonShare(usize),
+    Ambient,
+    AmbientOffset,
     Identify,
     DimCursor,
     ExpandRange,
@@ -514,6 +518,30 @@ impl SettingsWindow {
                     false,
                 );
             }
+        }
+        b.heading("Automatic brightness");
+        if self.view.sensor_available {
+            let s = &self.view.settings;
+            let desc = match self.view.lux {
+                Some(l) if s.ambient => format!("Follows the room light (now {l:.0} lux). Your manual changes adjust the curve."),
+                _ => "Follows the room light using this PC's light sensor. Your manual changes adjust the curve.".to_string(),
+            };
+            b.toggle_row(Id::Ambient, "Use the light sensor", &desc, s.ambient);
+            if s.ambient {
+                b.slider_row(
+                    Id::AmbientOffset,
+                    "Adjust",
+                    "",
+                    (s.ambient_offset + 50.0) / 100.0,
+                    format!("{:+.0}%", s.ambient_offset),
+                    false,
+                );
+            }
+        } else {
+            b.text(
+                "No ambient light sensor was found on this PC (common on desktops and external monitors).",
+                self.palette.subtext,
+            );
         }
         b.heading("Pointer");
         b.toggle_row(
@@ -1014,6 +1042,10 @@ impl SettingsWindow {
                 let v = (f * crate::engine::MAX_HW_SHARE / 5.0).round() * 5.0;
                 self.edit(move |s| s.monitor_mut(&key).hw_share = v);
             }
+            Id::AmbientOffset => {
+                let v = (f * 100.0 - 50.0).round();
+                self.edit(move |s| s.ambient_offset = v);
+            }
             Id::BedtimeMinutes => {
                 let m = ((10.0 + f * 170.0) / 5.0).round() as u32 * 5;
                 self.edit(move |s| s.bedtime_minutes = m);
@@ -1093,6 +1125,7 @@ impl SettingsWindow {
             }
             Id::Identify => self.send(Action::Identify),
             Id::DimCursor => self.edit(|s| s.dim_cursor = !s.dim_cursor),
+            Id::Ambient => self.edit(|s| s.ambient = !s.ambient),
             Id::ExpandRange => self.send(Action::ExpandRange),
             Id::SchedEnabled => self.edit(|s| s.schedule.enabled = !s.schedule.enabled),
             Id::SchedMode(_) => {
@@ -1215,7 +1248,8 @@ impl SettingsWindow {
             Id::Uninstall => self.send(Action::Uninstall),
             Id::CopyDiag => self.send(Action::CopyDiagnostics),
             Id::OpenFolder => self.send(Action::OpenSettingsFolder),
-            Id::BedtimeMinutes
+            Id::AmbientOffset
+            | Id::BedtimeMinutes
             | Id::IdleMinutes
             | Id::IdleLevel
             | Id::MonShare(_)

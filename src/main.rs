@@ -1,6 +1,7 @@
 //! Screen Lighting Control (SLC) — entry point.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+mod ambient;
 mod app;
 mod cities;
 mod cli;
@@ -315,6 +316,10 @@ fn self_test() -> i32 {
         idle::idle_ms() / 1000,
         idle::audio_playing()
     );
+    match ambient::Sensor::open() {
+        Some(s) => println!("  light sensor: {:?} lux", s.lux()),
+        None => println!("  light sensor: none"),
+    }
     if let Some((b, n, color)) = engine::cursor::arrow_brightness() {
         println!("  arrow cursor: avg {b:.0}/255 over {n} px (color={color})");
     }

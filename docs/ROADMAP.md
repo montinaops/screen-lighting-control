@@ -31,6 +31,6 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 - ✅ Color filters: Grayscale, Amber night, Red night (plus Darkroom) — #18
 - ✅ Dimmed mouse pointer (darkened copies of the system cursors while the overlay dims) — #20
 
-## Milestone v1.3 — integrations
-- Philips Hue (local bridge API) and Home Assistant following the schedule
-- Ambient light sensor (Windows.Devices.Sensors) auto-brightness
+## Milestone v1.3 — integrations ✅ (released 1.3.0)
+- ~~Philips Hue / Home Assistant~~ — dropped (D18: SLC stays network-free)
+- ✅ Ambient light sensor auto-brightness with a learned offset (D19) — #21

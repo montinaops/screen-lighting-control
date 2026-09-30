@@ -53,6 +53,11 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Dimmed pointer: arrow average 137 → 55 at 20% brightness, back to 137 at 100%; after a hard kill `--reset` restores it
 - ⚠️ Eye break: needs 20 minutes of continuous activity; countdown logic reviewed, not observed live
 
+## Integrations (v1.3)
+- ✅ No-sensor path: `--self-test` reports "light sensor: none"; Displays page shows the explanation; enabling it in
+  the INI logs "light sensor: none" and changes nothing
+- ⚠️ Real sensor: not available (desktop monitors); curve and smoothing covered by unit tests
+
 ## Install
 - ✅ `--install`: exe, migrated settings, Start menu shortcut, Apps & features entry, autostart; installed copy runs
 - ✅ `--uninstall --quiet`: stops the app, restores backlight, removes folder, shortcut, entries and autostart

@@ -4,6 +4,14 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-30
+
+Milestone v1.3. Smart-light integrations were dropped so SLC stays network-free (decision D18).
+
+### Added
+- Automatic brightness from the ambient light sensor (Settings › Displays, shown only when the PC has a sensor):
+  a logarithmic lux→brightness curve with smoothing and 3% hysteresis; manual brightness changes teach an offset.
+
 ## [1.2.0] - 2026-09-30
 
 Milestone v1.2: comfort.

@@ -85,6 +85,9 @@ const EYE_BREAK_SECONDS: u32 = 20;
 /// A pause in input this long counts as a natural break.
 const NATURAL_BREAK_MS: u64 = 5 * 60_000;
 const TIMER_BREAK: usize = 11;
+/// Light sensor polling while automatic brightness is on.
+const TIMER_AMBIENT: usize = 12;
+const AMBIENT_POLL_MS: u32 = 2000;
 /// The tooltip counts down to bedtime in the last hours.
 const BEDTIME_TOOLTIP_MIN: f64 = 180.0;
 
@@ -218,6 +221,12 @@ pub struct App {
     /// When the bedtime reminder last showed (at most once per 12 h).
     bedtime_shown: u64,
     cursor: engine::cursor::CursorDimmer,
+    /// Light sensor (opened while automatic brightness is on).
+    sensor: Option<crate::ambient::Sensor>,
+    /// Smoothed illuminance.
+    lux: Option<f32>,
+    /// The sensor (not the user) is changing brightness right now.
+    ambient_driving: bool,
 }
 
 thread_local! {
@@ -337,6 +346,9 @@ impl App {
                 break_left: None,
                 bedtime_shown: 0,
                 cursor: Default::default(),
+                sensor: None,
+                lux: None,
+                ambient_driving: false,
             });
             // A hidden top-level window (not message-only) so that broadcasts such as
             // WM_DISPLAYCHANGE, WM_SETTINGCHANGE and TaskbarCreated reach us.
@@ -370,6 +382,7 @@ impl App {
             app.register_hotkeys();
             app.update_watcher();
             app.update_idle_timer();
+            app.update_ambient();
             if crate::install::night_light_on() {
                 info!("Windows Night Light is on");
                 if let Some(t) = &app.tray {
@@ -479,10 +492,52 @@ impl App {
 
     /// Moves every monitor by the same amount so the average becomes `value`
     /// (keeps relative offsets until a monitor hits a limit).
+    fn update_ambient(&mut self) {
+        if self.settings.ambient {
+            if self.sensor.is_none() {
+                self.sensor = crate::ambient::Sensor::open();
+                info!("light sensor: {}", if self.sensor.is_some() { "found" } else { "none" });
+            }
+            if self.sensor.is_some() {
+                unsafe { SetTimer(Some(self.hwnd), TIMER_AMBIENT, AMBIENT_POLL_MS, None) };
+                self.on_ambient_tick();
+                return;
+            }
+        }
+        self.sensor = None;
+        self.lux = None;
+        unsafe {
+            let _ = KillTimer(Some(self.hwnd), TIMER_AMBIENT);
+        }
+    }
+
+    fn on_ambient_tick(&mut self) {
+        let Some(reading) = self.sensor.as_ref().and_then(|s| s.lux()) else { return };
+        let lux = crate::ambient::smooth(self.lux, reading);
+        self.lux = Some(lux);
+        if self.paused_until.is_some() || self.rule.is_some() {
+            return;
+        }
+        let target = (crate::ambient::curve(lux) + self.settings.ambient_offset)
+            .clamp(engine::MIN_BRIGHTNESS.max(5.0), engine::MAX_BRIGHTNESS);
+        if (target - self.master()).abs() >= crate::ambient::HYSTERESIS {
+            self.ambient_driving = true;
+            self.set_master(target);
+            self.ambient_driving = false;
+            self.commit();
+        }
+    }
+
     fn set_master(&mut self, value: f32) {
         let delta = value.clamp(engine::MIN_BRIGHTNESS, engine::MAX_BRIGHTNESS) - self.master();
         for s in &mut self.screens {
             s.brightness = (s.brightness + delta).clamp(engine::MIN_BRIGHTNESS, engine::MAX_BRIGHTNESS);
+        }
+        // A manual change while the sensor drives brightness teaches the offset (like phones do).
+        if self.settings.ambient && !self.ambient_driving {
+            if let Some(lux) = self.lux {
+                self.settings.ambient_offset = (value - crate::ambient::curve(lux)).clamp(-50.0, 50.0);
+            }
         }
         // Setting an extreme should land every monitor exactly on it.
         if value >= engine::MAX_BRIGHTNESS || value <= engine::MIN_BRIGHTNESS {
@@ -1228,6 +1283,8 @@ impl App {
             range_expanded,
             night_light_on: crate::install::night_light_on(),
             recent_apps: self.recent_apps.clone(),
+            sensor_available: self.sensor.is_some() || crate::ambient::Sensor::open().is_some(),
+            lux: self.lux,
             current_brightness: self.master(),
             current_kelvin: self.kelvin,
         }
@@ -1333,6 +1390,7 @@ impl App {
         self.fullscreen = false;
         self.update_watcher();
         self.update_idle_timer();
+        self.update_ambient();
         self.commit();
     }
 
@@ -1795,6 +1853,10 @@ impl App {
             settings_ui::WM_APP_SETTINGS_ACTION => {
                 let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
                 self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_AMBIENT => {
+                self.on_ambient_tick();
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_BREAK => {

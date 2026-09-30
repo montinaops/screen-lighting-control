@@ -22,3 +22,5 @@ follow from them.
 | D15 | Workflow | One PR per major feature, self-merged (squash); docs kept in `docs/` | |
 | D16 | Darkroom | Implemented with the Magnification API color matrix | No gamma range limit; Windows removes it automatically if SLC dies. |
 | D17 | Dependencies | Only the `windows` crate | Size and supply-chain risk. |
+| D18 | Smart lights | **Dropped** (Philips Hue / Home Assistant) — owner, 2026-09-30 | Keeps SLC strictly network-free (principle 4). |
+| D19 | Light sensor | **Build ambient-light auto-brightness** even though it can't be tested on the owner's hardware — owner, 2026-09-30 | Hidden when no sensor exists; covered by unit tests and the no-sensor path. |

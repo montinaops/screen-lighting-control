@@ -310,6 +310,15 @@ slc.exe --pause 60                           (roadmap v1.1)
   audio is the proxy.
 - Polls `GetLastInputInfo` every 5 s (every 100–250 ms only while fading/dimmed).
 
+## 13c. Ambient light (v1.3)
+
+- Uses `Windows.Devices.Sensors.LightSensor` (polled every 2 s while enabled; the sensor is opened only then).
+- Brightness = `20 + 20·log10(lux + 1)` (5–100%) + a user offset. Readings are smoothed (EMA 0.3) and changes under
+  3 points are ignored, so the backlight doesn't hunt.
+- A manual brightness change while the sensor is active sets the offset to (chosen − curve), like adaptive
+  brightness on phones.
+- Paused, or an app rule active → the sensor doesn't change brightness. No sensor → the setting is hidden.
+
 ## 14. Performance budget
 
 | Metric | Budget |

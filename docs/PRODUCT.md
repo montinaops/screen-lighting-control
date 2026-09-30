@@ -136,6 +136,9 @@ Windows rejects gamma ramps that differ "too much" from identity unless the regi
 - SLC **learns each monitor's deviation bound**, starting from 0.5. It first tries the full ramp (1 call), then the
   strongest ramp predicted to fit (1 more call). Only if that fails does it binary-search, blending toward identity
   (~8 calls), and re-learn the bound. Each `SetDeviceGammaRamp` can block up to one vsync (~16.7 ms).
+- **First start**: if the range is not expanded yet, SLC shows one dialog explaining the limit and that Windows will
+  ask for administrator permission once; on Yes it runs `slc.exe --expand-range` elevated. The offer is recorded in
+  `state.ini` (`[setup] range_offered=1`) and never repeated.
 - If warmth is being limited, the UI shows a hint: **"Expand color range"**. It runs `slc.exe --expand-range` elevated
   (UAC), sets the registry value, and asks the user to sign out or reboot.
 - Priority: warmth is applied first; dimming that gamma can't do goes to the overlay (§4.1).

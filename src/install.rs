@@ -66,6 +66,34 @@ pub fn expand_gamma_range() -> Result<(), String> {
     }
 }
 
+/// Text shown once to explain the administrator prompt.
+pub const RANGE_OFFER_TEXT: &str = "Allow Screen Lighting Control to use its warmest colors?\n\n\
+Windows normally limits how warm screen colors can get (about 2700K) and how far they can be dimmed. \
+SLC can remove this limit with one Windows setting, so warmth goes down to 1200K and dimming looks cleaner.\n\n\
+Windows will ask for administrator permission once. The change takes effect after you sign out and back in \
+(or restart). You will not be asked again; you can also do this later in Settings › Displays.";
+
+/// On the first start, offers to lift Windows' gamma range limit (asks at most once per settings folder).
+/// Returns true if the elevated helper was started.
+pub fn offer_expand_range_once(state_path: &std::path::Path) -> bool {
+    if gamma_range_expanded() {
+        return false;
+    }
+    let mut state = config::Ini::load(state_path).unwrap_or_default();
+    if state.get_bool("setup", "range_offered") == Some(true) {
+        return false;
+    }
+    state.set("setup", "range_offered", 1);
+    let _ = state.save(state_path);
+    if !ask(RANGE_OFFER_TEXT, true) {
+        info!("color range offer declined");
+        return false;
+    }
+    let started = run_elevated("--expand-range");
+    info!("color range offer accepted; elevated helper started={started}");
+    started
+}
+
 /// Starts `slc.exe <args>` elevated (UAC prompt). Returns false if the user declined.
 pub fn run_elevated(args: &str) -> bool {
     let exe = win::wide(&config::exe_path().display().to_string());

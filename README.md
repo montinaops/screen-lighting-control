@@ -61,8 +61,9 @@ slc.exe --expand-range     (admin) allow warmer colors / deeper gamma dimming
 
 ### Good to know
 
-- Windows limits how far gamma can change colors (about 2700K). If Settings › Displays says Windows is limiting
-  warmth, use **Expand…** (admin; takes effect after signing in again). Darkroom is not affected by this limit.
+- Windows limits how far gamma can change colors (about 2700K). On first start SLC offers to lift this limit: Windows
+  asks for administrator permission **once**, and the change takes effect after you sign out and back in. You can also
+  do it later in Settings › Displays › **Expand…**. Darkroom is not affected by this limit.
 - Turn off **Windows Night Light** while using SLC; both change the screen colors and would fight.
 - HDR displays use backlight + overlay only.
 

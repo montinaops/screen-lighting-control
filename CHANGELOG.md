@@ -4,6 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-09-30
+
+### Added
+- First start: if Windows still limits the color range, SLC explains why and offers to lift it. Windows asks for
+  administrator permission once; the change takes effect after signing in again. Asked only once (remembered in
+  `state.ini`); still available in Settings › Displays.
+
 ## [1.3.1] - 2026-09-30
 
 ### Fixed

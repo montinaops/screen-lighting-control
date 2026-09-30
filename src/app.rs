@@ -87,6 +87,9 @@ const NATURAL_BREAK_MS: u64 = 5 * 60_000;
 const TIMER_BREAK: usize = 11;
 /// Light sensor polling while automatic brightness is on.
 const TIMER_AMBIENT: usize = 12;
+/// Shortly after the first start, offer to lift Windows' color-range limit (once).
+const TIMER_RANGE_OFFER: usize = 13;
+const RANGE_OFFER_DELAY_MS: u32 = 1500;
 const AMBIENT_POLL_MS: u32 = 2000;
 /// The tooltip counts down to bedtime in the last hours.
 const BEDTIME_TOOLTIP_MIN: f64 = 180.0;
@@ -383,6 +386,7 @@ impl App {
             app.update_watcher();
             app.update_idle_timer();
             app.update_ambient();
+            SetTimer(Some(hwnd), TIMER_RANGE_OFFER, RANGE_OFFER_DELAY_MS, None);
             if crate::install::night_light_on() {
                 info!("Windows Night Light is on");
                 if let Some(t) = &app.tray {
@@ -1853,6 +1857,13 @@ impl App {
             settings_ui::WM_APP_SETTINGS_ACTION => {
                 let a = unsafe { Box::from_raw(lp.0 as *mut settings_ui::Action) };
                 self.on_settings_action(*a);
+                Some(LRESULT(0))
+            }
+            WM_TIMER if wp.0 == TIMER_RANGE_OFFER => {
+                unsafe {
+                    let _ = KillTimer(Some(self.hwnd), TIMER_RANGE_OFFER);
+                }
+                crate::install::offer_expand_range_once(&self.paths.state);
                 Some(LRESULT(0))
             }
             WM_TIMER if wp.0 == TIMER_AMBIENT => {

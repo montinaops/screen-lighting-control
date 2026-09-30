@@ -10,8 +10,8 @@ use windows::Win32::UI::WindowsAndMessaging::{CreateIconIndirect, HICON, ICONINF
 pub use crate::glyph::{render, Glyph};
 
 /// Monochrome mark in `color` (tray and small UI icons). The caller owns it (DestroyIcon).
-pub fn create(size: u32, glyph: Glyph, ink: crate::glyph::Ink) -> Option<HICON> {
-    from_pixels(size, &render(size, glyph, ink))
+pub fn create(size: u32, glyph: Glyph, color: u32) -> Option<HICON> {
+    from_pixels(size, &render(size, glyph, color))
 }
 
 /// The app tile (window icons). The caller owns it (DestroyIcon).
@@ -61,14 +61,7 @@ mod tests {
         // Lower-left of the disc is lit, upper-right is covered by the second disc.
         assert_eq!(px[(20 * s + 8) as usize] >> 24, 255, "crescent body");
         assert_eq!(px[(12 * s + 20) as usize] >> 24, 0, "covered part");
-        let body = px[(20 * s + 8) as usize];
-        let (r, g, b) = ((body >> 16) & 0xFF, (body >> 8) & 0xFF, body & 0xFF);
-        assert!(r == g && g == b, "monochrome");
-        assert!(r >= 0x96, "light ink on the dark taskbar");
-        // Diagonal gradient: brighter toward the top-left.
-        let hi = px[(12 * s + 7) as usize] & 0xFF;
-        let lo = px[(25 * s + 14) as usize] & 0xFF;
-        assert!(hi > lo, "top-left {hi} should be brighter than bottom-right {lo}");
+        assert_eq!(px[(20 * s + 8) as usize] & 0xFFFFFF, 0xFFFFFF, "monochrome white");
     }
 
     #[test]

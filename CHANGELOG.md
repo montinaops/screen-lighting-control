@@ -4,11 +4,16 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-30
+
+### Changed
+- Back to the flat monochrome mark (plain white moon on dark, ink on light; white moon on a near-black tile for the
+  app icon). The 1.4.1 gradient was removed at the owner's request.
+
 ## [1.4.1] - 2026-09-30
 
 ### Changed
-- The eclipse mark now has a monochrome gradient, lit from the top-left: white → silver on dark surfaces, graphite →
-  near-black on light ones. The app icon tile goes from graphite at the top to near-black at the bottom.
+- The eclipse mark had a monochrome gradient (reverted in 1.4.2).
 
 ## [1.4.0] - 2026-09-30
 

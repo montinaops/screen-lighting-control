@@ -1374,7 +1374,7 @@ impl SettingsWindow {
             // Navigation pane.
             p.fill(Rect::new(0.0, 0.0, NAV_W, h), pal.surface);
             p.fill(Rect::new(NAV_W - 1.0, 0.0, 1.0, h), pal.border);
-            p.logo(31.0, 32.0, 10.0, super::theme::logo_ink(&pal), pal.surface, false);
+            p.logo(31.0, 32.0, 10.0, pal.accent, pal.surface, false);
             p.text(
                 "Screen Lighting",
                 Rect::new(48.0, 16.0, NAV_W - 56.0, 32.0),

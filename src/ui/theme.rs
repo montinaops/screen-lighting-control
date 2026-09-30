@@ -52,13 +52,6 @@ pub const LIGHT: Palette = Palette {
     danger: rgb(0xCD2B31),
 };
 
-/// The logo's gradient for a palette: white → silver on dark, graphite → near-black on light
-/// (the same inks as the tray icon, see `glyph::WHITE` / `glyph::INK`).
-pub fn logo_ink(p: &Palette) -> (Color, Color) {
-    let ink = if p.dark { crate::glyph::WHITE } else { crate::glyph::INK };
-    (rgb(ink.from), rgb(ink.to))
-}
-
 /// Whether the taskbar (system surfaces) uses the light theme — decides the tray icon's ink.
 pub fn taskbar_light() -> bool {
     reg_dword("SystemUsesLightTheme")

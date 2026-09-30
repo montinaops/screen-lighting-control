@@ -419,7 +419,7 @@ impl Flyout {
         self.surface.paint(|p| {
             p.clear(pal.bg);
             // Header.
-            p.logo(PAD + 9.0, 28.0, 8.5, super::theme::logo_ink(&pal), pal.bg, false);
+            p.logo(PAD + 9.0, 28.0, 8.5, pal.accent, pal.bg, false);
             p.text(
                 "Screen Lighting",
                 Rect::new(PAD + 26.0, 14.0, 180.0, 28.0),

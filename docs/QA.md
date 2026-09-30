@@ -23,7 +23,10 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Warmth presets apply; Windows range limit is detected and learned (2700K → 77% without the registry change)
 - ✅ Darkroom matrix active system-wide; **removed by Windows after a hard kill**
 - ✅ Movie mode starts (3400K, 2.5 h)
-- ⚠️ Expand color range (elevated) — not run on the owner's machine on purpose (machine-wide registry value)
+- ✅ Expand color range (elevated, run at the owner's request; verified after a restart): `GdiICMGammaRange=0x100`;
+  probes now unlimited — 2700K ×0.5 and 1200K ×0.2 apply with full warmth and full gamma scale (before: 77% / 50% warmth,
+  no gamma dimming); at 20% and 5% brightness the overlay is no longer needed (backlight 0% + gamma only); the Displays
+  page drops the "Windows limits warmth" note
 
 ## Schedule
 - ✅ Sun times match NOAA within 3 min (unit tests); whole-day curve has no jumps > 250K/min

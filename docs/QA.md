@@ -65,3 +65,6 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 ## Install
 - ✅ `--install`: exe, migrated settings, Start menu shortcut, Apps & features entry, autostart; installed copy runs
 - ✅ `--uninstall --quiet`: stops the app, restores backlight, removes folder, shortcut, entries and autostart
+- ✅ 1.3.3: after uninstall both `Programs\SLC` and `%APPDATA%\SLC` are deleted (not just emptied), `HKCU\Software\MONTINA` gone;
+  the folder SLC was installed from can be deleted while SLC runs
+- ⚠️ Elevated `--restore-range` during uninstall not run on the owner's machine (the owner wants the expanded range)

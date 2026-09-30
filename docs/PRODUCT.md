@@ -247,8 +247,16 @@ A small **on-screen display (OSD)** shows the new value for 1.2 s after a hotkey
 - **Install** (`slc.exe --install` or the Settings button, no admin needed): copies the exe to
   `%LOCALAPPDATA%\Programs\SLC\slc.exe`, creates a Start Menu shortcut, registers an uninstall entry under
   `HKCU\...\Uninstall\SLC`, enables *Start with Windows* (`HKCU\...\Run`), and moves settings to `%APPDATA%\SLC`.
-- **Uninstall** (`slc.exe --uninstall`, Settings, or Windows "Apps"): restores the hardware brightness and gamma,
-  removes the Run entry, shortcut, uninstall key and program files, and optionally the settings.
+- **Uninstall** (`slc.exe --uninstall`, Settings, or Windows "Apps & features") removes **everything SLC created** —
+  no files or registry entries are left behind:
+  - restores neutral colors, the normal pointer and each monitor's original backlight;
+  - removes the program folder (a hidden cleanup retries until SLC has exited), all settings (`%APPDATA%\SLC`, and a
+    portable `slc.ini`/`state.ini` next to the exe), the Start menu shortcut, the Apps & features entry, autostart and
+    `HKCU\Software\MONTINA\SLC`;
+  - if SLC turned on the Windows color-range setting (recorded in `HKCU\Software\MONTINA\SLC`), it is removed again
+    through an elevated helper (`--restore-range`; Windows asks once). If another program had turned it on, it stays.
+  - Windows' own caches of every program ever run (notification-area icon history, prefetch) are managed by Windows
+    and are out of any app's reach.
 - **Single instance**: a second launch brings the first instance's flyout forward (named mutex + window message).
 
 ## 11. Command line

@@ -4,6 +4,19 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-09-30
+
+### Changed
+- **Uninstall removes everything** — no settings question anymore: program folder, settings (profile and portable),
+  Start menu shortcut, Apps & features entry, autostart and SLC's registry key. If SLC itself enabled the Windows
+  color-range setting, uninstall restores it too (Windows asks for administrator permission once); if another program
+  had enabled it, it is left alone.
+
+### Fixed
+- The program folder could survive uninstall while the final "removed" message was open; cleanup now retries until SLC
+  has exited.
+- After installing, SLC no longer keeps the folder it was installed from in use (it now starts in its own folder).
+
 ## [1.3.2] - 2026-09-30
 
 ### Added

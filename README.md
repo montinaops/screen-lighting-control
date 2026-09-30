@@ -24,8 +24,9 @@ settings are saved next to the exe). To install it for your user (Start menu, au
 slc.exe --install
 ```
 
-Uninstall from Windows **Apps & features**, from Settings, or with `slc.exe --uninstall`. Uninstalling restores each
-display's original backlight.
+Uninstall from Windows **Apps & features**, from Settings, or with `slc.exe --uninstall`. Uninstalling removes
+everything SLC created — program, settings, shortcut, autostart and registry entries — restores each display's original
+backlight, and undoes the Windows color-range setting if SLC turned it on (Windows asks for permission once).
 
 Requirements: Windows 10 version 2004 or newer, or Windows 11 (x64).
 

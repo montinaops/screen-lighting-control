@@ -10,6 +10,8 @@ pub enum Command {
     Uninstall,
     /// Elevated helper: set `GdiICMGammaRange=256`.
     ExpandRange,
+    /// Elevated helper (uninstall): remove `GdiICMGammaRange` again.
+    RestoreRange,
     /// Non-interactive checks for CI.
     SelfTest,
     Help,
@@ -49,6 +51,7 @@ pub fn parse<I: IntoIterator<Item = String>>(args: I) -> Result<Cli, String> {
             "--install" => set(&mut cli, Command::Install)?,
             "--uninstall" => set(&mut cli, Command::Uninstall)?,
             "--expand-range" => set(&mut cli, Command::ExpandRange)?,
+            "--restore-range" => set(&mut cli, Command::RestoreRange)?,
             "--self-test" => set(&mut cli, Command::SelfTest)?,
             "-h" | "--help" | "/?" => set(&mut cli, Command::Help)?,
             "-v" | "--version" => set(&mut cli, Command::Version)?,

@@ -66,6 +66,106 @@ pub fn expand_gamma_range() -> Result<(), String> {
     }
 }
 
+/// Per-user key where SLC records what it changed outside its own folders (removed on uninstall).
+const SLC_KEY: PCWSTR = w!("Software\\MONTINA\\SLC");
+const VENDOR_KEY: PCWSTR = w!("Software\\MONTINA");
+const MARKER_RANGE: PCWSTR = w!("ExpandedGammaRange");
+
+/// Remembers that SLC (not another program) turned on the expanded color range.
+pub fn mark_range_expanded_by_slc() {
+    unsafe {
+        let mut key = HKEY::default();
+        if RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            SLC_KEY,
+            None,
+            None,
+            REG_OPTION_NON_VOLATILE,
+            KEY_SET_VALUE,
+            None,
+            &mut key,
+            None,
+        )
+        .is_ok()
+        {
+            let _ = RegSetValueExW(key, MARKER_RANGE, None, REG_DWORD, Some(&1u32.to_le_bytes()));
+            let _ = RegCloseKey(key);
+        }
+    }
+}
+
+/// True if SLC turned on the expanded color range on this account.
+pub fn range_expanded_by_slc() -> bool {
+    let mut v: u32 = 0;
+    let mut size = 4u32;
+    unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            SLC_KEY,
+            MARKER_RANGE,
+            RRF_RT_REG_DWORD,
+            None,
+            Some(&mut v as *mut u32 as *mut _),
+            Some(&mut size),
+        )
+        .is_ok()
+            && v == 1
+    }
+}
+
+/// Removes `GdiICMGammaRange` again (needs administrator rights; used by uninstall).
+pub fn restore_gamma_range() -> Result<(), String> {
+    unsafe {
+        let mut key = HKEY::default();
+        RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            w!("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ICM"),
+            None,
+            KEY_SET_VALUE,
+            &mut key,
+        )
+        .ok()
+        .map_err(|e| format!("cannot open the ICM key (administrator rights needed): {e}"))?;
+        let r = RegDeleteValueW(key, w!("GdiICMGammaRange"));
+        let _ = RegCloseKey(key);
+        if r.is_ok() || r == windows::Win32::Foundation::ERROR_FILE_NOT_FOUND {
+            info!("GdiICMGammaRange removed");
+            Ok(())
+        } else {
+            Err(format!("cannot remove GdiICMGammaRange: {r:?}"))
+        }
+    }
+}
+
+/// Starts `slc.exe <args>` elevated and waits for it (up to `timeout_ms`). Returns its exit code,
+/// or `None` if the user declined the UAC prompt.
+pub fn run_elevated_wait(args: &str, timeout_ms: u32) -> Option<u32> {
+    use windows::Win32::System::Threading::{GetExitCodeProcess, WaitForSingleObject};
+    use windows::Win32::UI::Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW};
+    let exe = win::wide(&config::exe_path().display().to_string());
+    let a = win::wide(args);
+    let mut sei = SHELLEXECUTEINFOW {
+        cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_NOCLOSEPROCESS,
+        lpVerb: w!("runas"),
+        lpFile: PCWSTR(exe.as_ptr()),
+        lpParameters: PCWSTR(a.as_ptr()),
+        nShow: windows::Win32::UI::WindowsAndMessaging::SW_HIDE.0,
+        ..Default::default()
+    };
+    unsafe {
+        ShellExecuteExW(&mut sei).ok()?;
+        if sei.hProcess.is_invalid() {
+            return None;
+        }
+        let _ = WaitForSingleObject(sei.hProcess, timeout_ms);
+        let mut code = 1u32;
+        let _ = GetExitCodeProcess(sei.hProcess, &mut code);
+        let _ = windows::Win32::Foundation::CloseHandle(sei.hProcess);
+        Some(code)
+    }
+}
+
 /// Text shown once to explain the administrator prompt.
 pub const RANGE_OFFER_TEXT: &str = "Allow Screen Lighting Control to use its warmest colors?\n\n\
 Windows normally limits how warm screen colors can get (about 2700K) and how far they can be dimmed. \
@@ -331,26 +431,35 @@ fn set_run_value(cmd: &str) {
     }
 }
 
-/// Removes the shortcut, uninstall entry and autostart; deletes the program folder after this
-/// process exits; optionally deletes the settings folder.
-pub fn uninstall(remove_settings: bool) -> Result<(), String> {
+/// Removes everything SLC created: autostart, Start menu shortcut, Apps & features entry, the per-user
+/// SLC registry key, settings (profile and portable), and the program folder (after this process exits).
+pub fn uninstall() -> Result<(), String> {
     set_autostart(false);
     if let Some(lnk) = start_menu_shortcut() {
         let _ = std::fs::remove_file(lnk);
     }
     unsafe {
         let _ = RegDeleteTreeW(HKEY_CURRENT_USER, UNINSTALL_KEY);
+        let _ = RegDeleteTreeW(HKEY_CURRENT_USER, SLC_KEY);
+        // Remove the vendor key too if nothing else lives there.
+        let _ = RegDeleteKeyW(HKEY_CURRENT_USER, VENDOR_KEY);
     }
-    if remove_settings {
-        if let Some(r) = config::roaming_dir() {
-            let _ = std::fs::remove_dir_all(r);
-        }
+    // Settings of the installed copy, and of this copy if it runs portable.
+    if let Some(r) = config::roaming_dir() {
+        let _ = std::fs::remove_dir_all(r);
     }
+    let paths = config::resolve();
+    let _ = std::fs::remove_file(&paths.settings);
+    let _ = std::fs::remove_file(&paths.state);
     if let Some(dir) = config::install_dir().filter(|d| d.exists()) {
         let exe = config::exe_path();
         if exe.parent() == Some(dir.as_path()) {
-            // We are running from the folder: let cmd.exe remove it once we have exited.
-            let script = format!("/c ping -n 3 127.0.0.1 >nul & rmdir /s /q \"{}\"", dir.display());
+            // We are running from the folder: cmd.exe retries (up to ~2 minutes) until this process
+            // has exited and the folder can be removed.
+            let d = dir.display();
+            let script = format!(
+                "/c for /l %i in (1,1,60) do @(if exist \"{d}\" (rmdir /s /q \"{d}\" 2>nul & ping -n 3 127.0.0.1 >nul))"
+            );
             spawn_hidden("cmd.exe", &script);
         } else {
             let _ = std::fs::remove_dir_all(&dir);
@@ -381,6 +490,8 @@ pub fn launch(exe: &std::path::Path, args: &[&str]) -> bool {
     // Detach stdio so a console that started us is not kept open by the new process.
     std::process::Command::new(exe)
         .args(args)
+        // Run from the program's own folder so the folder we were started from is not kept in use.
+        .current_dir(exe.parent().unwrap_or(std::path::Path::new(".")))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

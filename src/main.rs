@@ -67,6 +67,7 @@ fn main() {
             console();
             match install::expand_gamma_range() {
                 Ok(()) => {
+                    install::mark_range_expanded_by_slc();
                     println!("SLC: color range expanded; sign out and back in to apply");
                     if !cli.quiet {
                         install::ask(
@@ -81,6 +82,16 @@ fn main() {
                     if !cli.quiet {
                         install::ask(&format!("Could not expand the color range: {e}"), false);
                     }
+                    1
+                }
+            }
+        }
+        Command::RestoreRange => {
+            console();
+            match install::restore_gamma_range() {
+                Ok(()) => 0,
+                Err(e) => {
+                    eprintln!("slc: {e}");
                     1
                 }
             }
@@ -230,12 +241,28 @@ fn cmd_uninstall(quiet: bool, confirmed: bool) -> i32 {
             }
         }
     }
-    let remove_settings = !quiet && install::ask("Also delete your SLC settings?", true);
-    match install::uninstall(remove_settings) {
+    // Undo the Windows color-range setting, but only if SLC turned it on (another program such as
+    // f.lux may rely on it otherwise). This needs administrator rights: Windows asks once.
+    let mut range_note = "";
+    if install::range_expanded_by_slc() && install::gamma_range_expanded() {
+        match install::run_elevated_wait("--restore-range", 60_000) {
+            Some(0) => range_note = "\n\nThe Windows color-range setting was restored too.",
+            _ => {
+                range_note = "\n\nThe Windows color-range setting could not be restored (administrator permission was not given). It is harmless; SLC Settings › Displays explains it.";
+                info!("color range not restored (elevation declined or failed)");
+            }
+        }
+    }
+    match install::uninstall() {
         Ok(()) => {
             println!("SLC: uninstalled");
             if !quiet {
-                install::ask("Screen Lighting Control was removed.", false);
+                install::ask(
+                    &format!(
+                        "Screen Lighting Control and all of its files and settings were removed.{range_note}"
+                    ),
+                    false,
+                );
             }
             0
         }

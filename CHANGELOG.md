@@ -4,6 +4,13 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-09-30
+
+### Fixed
+- `slc.exe --reset` now also sets every monitor's backlight to 100% (it only reset colors and the pointer, so a dimmed
+  backlight survived a crash), closes a running instance first, and saves 100% / neutral warmth so the next start
+  doesn't dim again.
+
 ## [1.3.0] - 2026-09-30
 
 Milestone v1.3. Smart-light integrations were dropped so SLC stays network-free (decision D18).

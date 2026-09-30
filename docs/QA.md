@@ -41,6 +41,7 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Crash (`taskkill /F`) → next start resets gamma and shows a notice
 - ✅ Panic hotkey restores full brightness and pauses
 - ✅ `--exit` closes cleanly and restores neutral gamma
+- ✅ `--reset` after a hard kill while dimmed: backlight 0% → 100% on both displays; also stops a running instance (1.3.1)
 
 ## Automation (v1.1)
 - ✅ App rules: Off and No overlay verified with Notepad in front / closed

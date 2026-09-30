@@ -61,10 +61,7 @@ fn main() {
         }
         Command::Reset => {
             console();
-            let n = engine::reset_all(&monitors::enumerate());
-            engine::cursor::restore();
-            println!("SLC: reset {n} monitor(s)");
-            0
+            cmd_reset()
         }
         Command::ExpandRange => {
             console();
@@ -170,6 +167,35 @@ fn stop_running_instance() -> bool {
         }
     }
     true
+}
+
+/// `--reset`: neutral colors, normal pointer and full backlight on every monitor (PRODUCT §11/§12).
+/// A running instance is closed first so it cannot re-apply its state, and the saved brightness and
+/// warmth are reset too so the next start does not dim again.
+fn cmd_reset() -> i32 {
+    stop_running_instance();
+    let mons = monitors::enumerate();
+    let n = engine::reset_all(&mons);
+    engine::cursor::restore();
+    let mut backlights = 0;
+    for m in &mons {
+        if engine::hardware::write(m.hmon, m.internal, 100.0) {
+            backlights += 1;
+        }
+    }
+    let path = config::resolve().settings;
+    if let Some(ini) = config::Ini::load(&path) {
+        let mut s = model::Settings::from_ini(&ini);
+        s.kelvin = color::NEUTRAL_KELVIN;
+        for (_, m) in s.monitors.iter_mut() {
+            m.brightness = engine::MAX_BRIGHTNESS;
+        }
+        if let Err(e) = s.to_ini().save(&path) {
+            eprintln!("slc: could not update settings: {e}");
+        }
+    }
+    println!("SLC: reset {n} monitor(s); backlight set to 100% on {backlights}");
+    0
 }
 
 fn cmd_install() -> i32 {

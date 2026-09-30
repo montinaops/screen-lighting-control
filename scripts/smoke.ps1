@@ -14,10 +14,18 @@ $failures = @()
 function Step($name, [scriptblock]$body) {
     try { & $body; "PASS  $name" } catch { "FAIL  $name :: $_"; $script:failures += $name }
 }
-function Run([string[]]$argv) {
-    $p = Start-Process $slc -ArgumentList $argv -Wait -PassThru -WindowStyle Hidden
+# Waits for slc.exe itself only. (Start-Process -Wait also waits for child processes, and
+# --install starts the installed copy, which keeps running.)
+function RunExe([string]$exe, [string[]]$argv, [string]$cwd = $work) {
+    $psi = New-Object Diagnostics.ProcessStartInfo $exe
+    $psi.Arguments = ($argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' '
+    $psi.WorkingDirectory = $cwd
+    $psi.UseShellExecute = $false
+    $p = [Diagnostics.Process]::Start($psi)
+    if (-not $p.WaitForExit(60000)) { $p.Kill(); throw "timed out: $exe $($psi.Arguments)" }
     return $p.ExitCode
 }
+function Run([string[]]$argv) { RunExe $slc $argv }
 function SlcRunning { @(Get-Process slc -ErrorAction SilentlyContinue).Count -gt 0 }
 function WaitUntil([scriptblock]$cond, [int]$seconds) {
     $t = [Diagnostics.Stopwatch]::StartNew()
@@ -66,8 +74,8 @@ Step "install creates program, shortcut, uninstall entry and autostart, and star
 }
 
 Step "uninstall leaves nothing behind" {
-    $p = Start-Process "$prog\slc.exe" -ArgumentList @('--uninstall', '--quiet') -Wait -PassThru -WorkingDirectory $env:TEMP
-    if ($p.ExitCode -ne 0) { throw "exit code $($p.ExitCode)" }
+    $code = RunExe "$prog\slc.exe" @('--uninstall', '--quiet') $env:TEMP
+    if ($code -ne 0) { throw "exit code $code" }
     if (-not (WaitUntil { -not (Test-Path $prog) } 30)) { throw "program folder still exists" }
     $left = @()
     if (Test-Path $roam) { $left += $roam }

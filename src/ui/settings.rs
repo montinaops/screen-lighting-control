@@ -235,7 +235,7 @@ impl SettingsWindow {
                 hInstance: win::hinstance(),
                 lpszClassName: CLASS,
                 hCursor: LoadCursorW(None, IDC_ARROW).unwrap_or_default(),
-                hIcon: crate::icon::create(32, crate::icon::Glyph::Normal).unwrap_or_default(),
+                hIcon: crate::icon::create_tile(32).unwrap_or_default(),
                 ..Default::default()
             };
             RegisterClassExW(&wc);
@@ -493,7 +493,7 @@ impl SettingsWindow {
         if self.view.night_light_on {
             b.card_text(
                 "Windows Night Light is on. It fights with SLC over the screen colors (flicker). Turn it off in Settings › System › Display.",
-                self.palette.danger,
+                self.palette.text,
             );
         }
         let any_limited = self.view.monitors.iter().any(|m| m.gamma_limited);
@@ -1374,14 +1374,7 @@ impl SettingsWindow {
             // Navigation pane.
             p.fill(Rect::new(0.0, 0.0, NAV_W, h), pal.surface);
             p.fill(Rect::new(NAV_W - 1.0, 0.0, 1.0, h), pal.border);
-            p.text(
-                glyph::BRIGHTNESS,
-                Rect::new(20.0, 16.0, 24.0, 32.0),
-                18.0,
-                Weight::Icon,
-                Align::Left,
-                pal.accent,
-            );
+            p.logo(31.0, 32.0, 10.0, pal.accent, pal.surface, false);
             p.text(
                 "Screen Lighting",
                 Rect::new(48.0, 16.0, NAV_W - 56.0, 32.0),
@@ -1523,7 +1516,7 @@ impl SettingsWindow {
                         );
                     }
                     Kind::Card => {
-                        p.fill_round(r, 8.0, d2d::mix(pal.surface, pal.danger, 0.12));
+                        p.fill_round(r, 8.0, pal.surface_hover);
                     }
                     Kind::Timeline => paint_timeline(p, r, &view.settings.schedule, &pal),
                 }

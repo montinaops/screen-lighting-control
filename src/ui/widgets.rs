@@ -9,7 +9,6 @@ pub mod glyph {
     pub const SETTINGS: &str = "\u{E713}";
     pub const PAUSE: &str = "\u{E769}";
     pub const PLAY: &str = "\u{E768}";
-    pub const BRIGHTNESS: &str = "\u{E706}";
     pub const MONITOR: &str = "\u{E7F4}";
     pub const CLOSE: &str = "\u{E711}";
     pub const WARNING: &str = "\u{E7BA}";
@@ -42,7 +41,8 @@ pub fn slider(p: &Painter, r: Rect, frac: f32, pal: &Palette, hot: bool, warmth:
         for i in 0..STEPS {
             let t = (i as f32 + 0.5) / STEPS as f32;
             let k = color::MIN_KELVIN as f32 + t * (color::MAX_KELVIN - color::MIN_KELVIN) as f32;
-            let c = super::osd::kelvin_color(k as u32);
+            // A muted hint of the real color (the only non-gray element of the monotone UI).
+            let c = d2d::mix(super::osd::kelvin_color(k as u32), pal.track, 0.65);
             p.fill(Rect::new(track.x + seg * i as f32, track.y - 1.0, seg + 0.5, TRACK_H + 2.0), c);
         }
     } else {

@@ -419,14 +419,7 @@ impl Flyout {
         self.surface.paint(|p| {
             p.clear(pal.bg);
             // Header.
-            p.text(
-                glyph::BRIGHTNESS,
-                Rect::new(PAD, 14.0, 22.0, 28.0),
-                16.0,
-                Weight::Icon,
-                Align::Left,
-                pal.accent,
-            );
+            p.logo(PAD + 9.0, 28.0, 8.5, pal.accent, pal.bg, false);
             p.text(
                 "Screen Lighting",
                 Rect::new(PAD + 26.0, 14.0, 180.0, 28.0),
@@ -447,14 +440,15 @@ impl Flyout {
             );
 
             if let (Some((banner, keep)), Some(secs)) = (l.banner, st.deep_dim_countdown) {
-                p.fill_round(banner, 8.0, super::d2d::mix(pal.surface, pal.danger, 0.18));
+                p.fill_round(banner, 8.0, pal.surface_hover);
+                p.stroke_round(banner, 8.0, pal.border, 1.0);
                 p.text(
                     glyph::WARNING,
                     Rect::new(banner.x + 12.0, banner.y, 18.0, banner.h),
                     14.0,
                     Weight::Icon,
                     Align::Left,
-                    pal.danger,
+                    pal.text,
                 );
                 p.text(
                     &format!("Very dark. Keep it? Reverting in {secs} s"),

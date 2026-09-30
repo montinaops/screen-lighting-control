@@ -148,29 +148,20 @@ impl Osd {
             let text_w = WIDTH - text_x - 18.0;
             let (title, value, frac, fill) = match &content {
                 Content::Brightness(b) => {
-                    // Brightness glyph: ring with the left half filled.
-                    p.ring(cx, cy, 11.0, pal.accent, 2.2);
-                    {
-                        let _c = p.clip(Rect::new(cx - 12.0, cy - 12.0, 12.0, 24.0));
-                        p.circle(cx, cy, 7.0, pal.accent);
-                    }
+                    p.logo(cx, cy, 11.0, pal.accent, pal.surface, false);
                     ("Brightness".to_string(), format!("{b:.0}%"), b / 100.0, pal.accent)
                 }
                 Content::Warmth(k) => {
-                    let kc = kelvin_color(*k);
+                    // Monotone UI: the swatch is a muted hint of the real color.
+                    let kc = d2d::mix(kelvin_color(*k), pal.track, 0.45);
                     p.circle(cx, cy, 11.0, kc);
                     p.ring(cx, cy, 11.0, pal.border, 1.0);
                     let frac =
                         (*k - color::MIN_KELVIN) as f32 / (color::MAX_KELVIN - color::MIN_KELVIN) as f32;
-                    (
-                        format!("Warmth · {}", color::preset_name(*k)),
-                        format!("{k}K"),
-                        frac,
-                        d2d::mix(kc, pal.accent, 0.35),
-                    )
+                    (format!("Warmth · {}", color::preset_name(*k)), format!("{k}K"), frac, pal.accent)
                 }
                 Content::Message(t, sub) => {
-                    p.ring(cx, cy, 11.0, pal.accent, 2.2);
+                    p.logo(cx, cy, 11.0, pal.accent, pal.surface, false);
                     p.text(
                         t,
                         Rect::new(text_x, 12.0, text_w, 24.0),

@@ -4,6 +4,16 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-30
+
+### Changed
+- **New monotone, minimalist look.** New mark: an eclipse (crescent). The tray icon is white on a dark taskbar and
+  near-black on a light one (it follows the Windows taskbar theme); the app icon is a white crescent on a near-black
+  rounded tile. The flyout, OSD and settings window are grayscale — white on dark / ink on light — with the warmth
+  slider keeping only a muted hint of the real color. Warnings use neutral cards instead of red.
+- **Privacy:** the tray flyout no longer shows your city or country ("Automatic · Night"), so nothing identifying is
+  visible if the panel is open while streaming or screen sharing. (The location is only shown in Settings › Schedule.)
+
 ## [1.3.4] - 2026-09-30
 
 ### Fixed

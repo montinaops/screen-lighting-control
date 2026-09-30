@@ -9,9 +9,17 @@ use windows::Win32::UI::WindowsAndMessaging::{CreateIconIndirect, HICON, ICONINF
 
 pub use crate::glyph::{render, Glyph};
 
-/// Creates an HICON from `render`. The caller owns it (DestroyIcon).
-pub fn create(size: u32, glyph: Glyph) -> Option<HICON> {
-    let pixels = render(size, glyph);
+/// Monochrome mark in `color` (tray and small UI icons). The caller owns it (DestroyIcon).
+pub fn create(size: u32, glyph: Glyph, color: u32) -> Option<HICON> {
+    from_pixels(size, &render(size, glyph, color))
+}
+
+/// The app tile (window icons). The caller owns it (DestroyIcon).
+pub fn create_tile(size: u32) -> Option<HICON> {
+    from_pixels(size, &crate::glyph::render_tile(size))
+}
+
+fn from_pixels(size: u32, pixels: &[u32]) -> Option<HICON> {
     unsafe {
         let bmi = BITMAPINFO {
             bmiHeader: BITMAPINFOHEADER {
@@ -46,19 +54,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn glyph_has_left_fill_and_empty_corners() {
+    fn crescent_shape_and_transparent_corners() {
         let s = 32;
-        let px = render(s, Glyph::Normal);
+        let px = render(s, Glyph::Normal, crate::glyph::WHITE);
         assert_eq!(px[0] >> 24, 0, "corner must be transparent");
-        let left = px[(16 * s + 10) as usize] >> 24;
-        let right = px[(16 * s + 22) as usize] >> 24;
-        assert_eq!(left, 255, "left half filled");
-        assert_eq!(right, 0, "right half empty inside the ring");
+        // Lower-left of the disc is lit, upper-right is covered by the second disc.
+        assert_eq!(px[(20 * s + 8) as usize] >> 24, 255, "crescent body");
+        assert_eq!(px[(12 * s + 20) as usize] >> 24, 0, "covered part");
+        assert_eq!(px[(20 * s + 8) as usize] & 0xFFFFFF, 0xFFFFFF, "monochrome white");
     }
 
     #[test]
-    fn paused_glyph_is_hollow() {
-        let px = render(32, Glyph::Paused);
-        assert_eq!(px[(16 * 32 + 10) as usize] >> 24, 0);
+    fn states() {
+        let paused = render(32, Glyph::Paused, crate::glyph::INK);
+        assert!((paused[(20 * 32 + 8) as usize] >> 24) < 128, "paused is translucent");
+        let full = render(32, Glyph::Darkroom, crate::glyph::WHITE);
+        assert_eq!(full[(12 * 32 + 20) as usize] >> 24, 255, "full disc when a filter is on");
+    }
+
+    #[test]
+    fn tile_is_opaque_with_light_mark() {
+        let px = crate::glyph::render_tile(64);
+        assert_eq!(px[32 * 64 + 32] >> 24, 255);
+        assert_eq!(px[0] >> 24, 0, "rounded corner");
     }
 }

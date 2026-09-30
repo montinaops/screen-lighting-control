@@ -1150,13 +1150,9 @@ impl App {
         } else if let Some((_, phase)) = self.override_k {
             format!("Manual until the {} ends", format!("{phase:?}").to_lowercase())
         } else {
+            // Never show the city/country here: the flyout may be visible while streaming or sharing.
             let phase = schedule::target_now(sc).phase;
-            let place = if sc.has_location() && sc.mode == model::ScheduleMode::Sun {
-                sc.city.clone()
-            } else {
-                "fixed times".to_string()
-            };
-            format!("Automatic · {phase:?} · {place}")
+            format!("Automatic · {phase:?}")
         };
         flyout::State {
             master: self.master(),

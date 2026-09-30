@@ -328,6 +328,15 @@ impl Painter<'_> {
         };
     }
 
+    /// The SLC mark (eclipse) of radius `r` at (cx, cy): a disc in `ink` partly covered by a disc in
+    /// `bg` (the background it sits on). `full` draws the whole disc (a color filter is active).
+    pub fn logo(&self, cx: f32, cy: f32, r: f32, ink: Color, bg: Color, full: bool) {
+        self.circle(cx, cy, r, ink);
+        if !full {
+            self.circle(cx + r * 0.52, cy - r * 0.30, r * 0.86, bg);
+        }
+    }
+
     /// Word-wrapped text, top-aligned in `r`.
     pub fn text_wrapped(&self, s: &str, r: Rect, size: f32, c: Color) {
         let Some(tf) = text_format_ex(self.fac, size, Weight::Regular, Align::Left, true) else { return };

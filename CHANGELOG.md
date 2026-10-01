@@ -4,6 +4,12 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-10-01
+
+### Changed
+- The app icon (Start menu, title bar, taskbar, Apps & features) is now just the white moon on a transparent
+  background — the dark tile behind it was removed at the owner's request.
+
 ## [1.4.2] - 2026-09-30
 
 ### Changed

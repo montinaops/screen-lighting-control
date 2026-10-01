@@ -14,9 +14,9 @@ pub fn create(size: u32, glyph: Glyph, color: u32) -> Option<HICON> {
     from_pixels(size, &render(size, glyph, color))
 }
 
-/// The app tile (window icons). The caller owns it (DestroyIcon).
-pub fn create_tile(size: u32) -> Option<HICON> {
-    from_pixels(size, &crate::glyph::render_tile(size))
+/// The app icon (window icons): the white moon. The caller owns it (DestroyIcon).
+pub fn create_app_icon(size: u32) -> Option<HICON> {
+    from_pixels(size, &crate::glyph::render_app_icon(size))
 }
 
 fn from_pixels(size: u32, pixels: &[u32]) -> Option<HICON> {
@@ -73,9 +73,12 @@ mod tests {
     }
 
     #[test]
-    fn tile_is_opaque_with_light_mark() {
-        let px = crate::glyph::render_tile(64);
-        assert_eq!(px[32 * 64 + 32] >> 24, 255);
-        assert_eq!(px[0] >> 24, 0, "rounded corner");
+    fn app_icon_is_the_white_moon_without_background() {
+        let px = crate::glyph::render_app_icon(64);
+        assert_eq!(px[0] >> 24, 0, "transparent background");
+        assert_eq!(px[63 * 64 + 63] >> 24, 0, "transparent background");
+        let body = px[40 * 64 + 16];
+        assert_eq!(body >> 24, 255, "moon body is opaque");
+        assert_eq!(body & 0xFFFFFF, 0xFFFFFF, "white");
     }
 }

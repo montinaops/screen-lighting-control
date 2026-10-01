@@ -235,7 +235,7 @@ impl SettingsWindow {
                 hInstance: win::hinstance(),
                 lpszClassName: CLASS,
                 hCursor: LoadCursorW(None, IDC_ARROW).unwrap_or_default(),
-                hIcon: crate::icon::create_tile(32).unwrap_or_default(),
+                hIcon: crate::icon::create_app_icon(32).unwrap_or_default(),
                 ..Default::default()
             };
             RegisterClassExW(&wc);

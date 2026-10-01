@@ -15,7 +15,7 @@ fn ico() -> Vec<u8> {
     let images: Vec<(u32, Vec<u8>)> = ICON_SIZES
         .iter()
         .map(|&s| {
-            let px = glyph::render_tile(s);
+            let px = glyph::render_app_icon(s);
             let mut bmp = Vec::new();
             // BITMAPINFOHEADER (height doubled: color + mask).
             for v in [40u32, s, s * 2] {

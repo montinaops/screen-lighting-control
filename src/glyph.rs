@@ -50,27 +50,7 @@ pub fn render(size: u32, glyph: Glyph, color: u32) -> Vec<u32> {
     px
 }
 
-/// The app icon: a white crescent on a near-black rounded tile (reads on light and dark backgrounds).
-pub fn render_tile(size: u32) -> Vec<u32> {
-    let n = size as f32;
-    let c = n / 2.0;
-    let radius = n * 0.22;
-    let half = n / 2.0 - 0.5;
-    let mut px = vec![0u32; (size * size) as usize];
-    for y in 0..size {
-        for x in 0..size {
-            let (fx, fy) = (x as f32 + 0.5 - c, y as f32 + 0.5 - c);
-            // Rounded-square coverage (signed distance to a rounded box).
-            let (qx, qy) = (fx.abs() - (half - radius), fy.abs() - (half - radius));
-            let outside = (qx.max(0.0).powi(2) + qy.max(0.0).powi(2)).sqrt() + qx.max(qy).min(0.0) - radius;
-            let tile = (0.5 - outside).clamp(0.0, 1.0);
-            if tile <= 0.0 {
-                continue;
-            }
-            let m = mark(x as f32 + 0.5, y as f32 + 0.5, c, c, n * 0.30, Glyph::Normal);
-            let v = (0x1C as f32 + (255.0 - 0x1C as f32) * m).round() as u32;
-            px[(y * size + x) as usize] = (((tile * 255.0).round() as u32) << 24) | (v << 16) | (v << 8) | v;
-        }
-    }
-    px
+/// The app icon: just the white moon on a transparent background (no tile).
+pub fn render_app_icon(size: u32) -> Vec<u32> {
+    render(size, Glyph::Normal, WHITE)
 }

@@ -201,8 +201,7 @@ Windows rejects gamma ramps that differ "too much" from identity unless the regi
 - **Monotone and minimalist**: grayscale palettes; the strongest ink of each theme is the accent (white on dark,
   near-black on light). The only color in the UI is a muted hint of the actual warmth on the warmth slider/swatch.
 - **Mark**: an eclipse — a disc partly covered by a second disc (crescent). Full disc = a color filter is active;
-  translucent = paused. Tray icon follows the taskbar theme (`SystemUsesLightTheme`); the app icon is a white crescent
-  on a near-black rounded tile, generated at build time from the same code.
+  translucent = paused. Tray icon follows the taskbar theme (`SystemUsesLightTheme`); the app icon is the same white crescent on a transparent background (no tile), generated at build time from the same code.
 - **Privacy**: the flyout never shows the configured city/country (safe while streaming or screen sharing).
 
 ### 8.2 Flyout (quick controls)

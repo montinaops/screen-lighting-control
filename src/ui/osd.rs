@@ -15,6 +15,10 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 
 const CLASS: windows::core::PCWSTR = w!("MONTINA.SLC.Osd");
 const WIDTH: f32 = 264.0;
+/// Messages widen the OSD to fit their text, up to this.
+const MAX_WIDTH: f32 = 440.0;
+const TEXT_X: f32 = 56.0;
+const TEXT_PAD_RIGHT: f32 = 18.0;
 const HEIGHT: f32 = 68.0;
 const BOTTOM_MARGIN: f32 = 96.0;
 const VISIBLE_MS: u32 = 1200;
@@ -37,6 +41,15 @@ pub struct Osd {
     content: Content,
     palette: Palette,
     alpha: u8,
+    /// Current width in DIPs (see `width_for`).
+    width: f32,
+}
+
+/// OSD width that fits `content` (messages can be wider than the default).
+fn width_for(content: &Content) -> f32 {
+    let Content::Message(t, sub) = content else { return WIDTH };
+    let text = d2d::measure(t, 15.0, Weight::Semibold).max(d2d::measure(sub, 12.0, Weight::Regular));
+    (TEXT_X + text.ceil() + 2.0 + TEXT_PAD_RIGHT).clamp(WIDTH, MAX_WIDTH)
 }
 
 /// The color a white point looks like (for the warmth swatch).
@@ -63,6 +76,7 @@ impl Osd {
                 content: Content::Brightness(100.0),
                 palette,
                 alpha: 0,
+                width: WIDTH,
             });
             let hwnd = CreateWindowExW(
                 WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
@@ -124,6 +138,7 @@ impl Osd {
 
     /// Like `show`, but stays visible for `visible_ms` before fading.
     pub fn show_for(&mut self, content: Content, visible_ms: u32) {
+        self.width = width_for(&content);
         self.content = content;
         unsafe {
             let mut pt = POINT::default();
@@ -135,7 +150,7 @@ impl Osd {
             let (mut dx, mut dy) = (96u32, 96u32);
             let _ = GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &mut dx, &mut dy);
             let s = dx as f32 / 96.0;
-            let (w, h) = ((WIDTH * s) as i32, (HEIGHT * s) as i32);
+            let (w, h) = ((self.width * s) as i32, (HEIGHT * s) as i32);
             let wa = mi.rcWork;
             let x = wa.left + ((wa.right - wa.left) - w) / 2;
             let y = wa.bottom - h - (BOTTOM_MARGIN * s) as i32;
@@ -152,13 +167,14 @@ impl Osd {
     fn paint(&mut self) {
         let pal = self.palette;
         let content = self.content.clone();
+        let width = self.width;
         self.surface.paint(|p| {
             p.clear(pal.surface);
-            let full = Rect::new(0.0, 0.0, WIDTH, HEIGHT);
+            let full = Rect::new(0.0, 0.0, width, HEIGHT);
             p.stroke_round(full, 8.0, pal.border, 1.0);
             let (cx, cy) = (30.0, HEIGHT / 2.0);
-            let text_x = 56.0;
-            let text_w = WIDTH - text_x - 18.0;
+            let text_x = TEXT_X;
+            let text_w = width - text_x - TEXT_PAD_RIGHT;
             let (title, value, frac, fill) = match &content {
                 Content::Brightness(b) => {
                     p.logo(cx, cy, 11.0, pal.accent, pal.surface, false);

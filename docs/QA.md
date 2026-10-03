@@ -56,8 +56,10 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ Color filters: all matrices read back system-wide
 - ✅ Bedtime reminder fires inside the window (log: "bedtime reminder (39 min)")
 - ✅ Dimmed pointer: arrow average 137 → 55 at 20% brightness, back to 137 at 100%; after a hard kill `--reset` restores it
-- ⚠️ Eye break: needs 20 minutes of continuous activity; countdown logic reviewed, not observed live
-- ⚠️ Computer break (1.5): scheduling covered by unit tests (`app::tests`), the 30–120 min wait not observed live
+- ✅ Eye break: observed live 2026-10-03 — fired after 20:00 of activity ("eye break (20 s)"), countdown on the OSD
+- ✅ Computer break (1.5, live 2026-10-03, interval 30 min): eye break fired at 20:00, computer break at 30:00
+  ("computer break (300 s)"), countdown 4:54 → 3:03 → "Break done — next break in 30 min"
+- ✅ OSD fits long messages (1.5.1): a 35-character scene name widens the popup, centered, nothing clipped
 
 ## Integrations (v1.3)
 - ✅ No-sensor path: `--self-test` reports "light sensor: none"; Displays page shows the explanation; enabling it in

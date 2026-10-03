@@ -4,6 +4,12 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-03
+
+### Fixed
+- OSD messages no longer cut off long text: the popup widens to fit (up to 440 px) and stays centered. Found in the
+  1.5.0 live test — "Back to work — next break in 30 min" lost its last letters, and the eye-break countdown its "s".
+
 ## [1.5.0] - 2026-10-03
 
 ### Added

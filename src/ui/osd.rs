@@ -101,6 +101,19 @@ impl Osd {
         self.show_for(content, VISIBLE_MS);
     }
 
+    /// The OSD has faded out (or was never shown).
+    pub fn hidden(&self) -> bool {
+        self.alpha == 0
+    }
+
+    /// Title of the message on display, if the OSD shows a message.
+    pub fn title(&self) -> Option<&str> {
+        match &self.content {
+            Content::Message(t, _) => Some(t),
+            _ => None,
+        }
+    }
+
     /// Updates the text of a visible OSD without moving it or restarting its timer.
     pub fn update(&mut self, content: Content) {
         self.content = content;

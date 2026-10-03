@@ -328,6 +328,19 @@ slc.exe --pause 60                           (roadmap v1.1)
   audio is the proxy.
 - Polls `GetLastInputInfo` every 5 s (every 100–250 ms only while fading/dimmed).
 
+## 13b2. Breaks (v1.2, computer breaks v1.5)
+
+Settings › General › Reminders. Both are gentle OSD countdowns: nothing is dimmed, blocked or locked.
+- **Eye breaks (20-20-20)**: after 20 minutes of activity, a 20-second "look at something ~6 m away" countdown. A
+  5-minute pause in input counts as a break.
+- **Computer breaks**: after `break_every` minutes of activity (30–120, default 60), a "step away from the screen"
+  countdown of `break_minutes` (5, 10 or 15; default 5), then "Break done — next break in 1 h 00 min". Being away
+  (no input) for a whole break length counts as one and restarts the clock. Off by default.
+- **The computer break wins**: it resets the eye-break clock too, replaces a running eye break, and an eye break due
+  within 2 minutes before a computer break is skipped.
+- Both wait while effects are paused or an app is fullscreen. Checked on the 30 s tick, so a break may start up to
+  30 s late. If another OSD (brightness, scene) takes over during a countdown, the countdown returns once it fades.
+
 ## 13c. Ambient light (v1.3)
 
 - Uses `Windows.Devices.Sensors.LightSensor` (polled every 2 s while enabled; the sensor is opened only then).

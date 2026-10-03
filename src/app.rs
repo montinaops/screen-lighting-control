@@ -84,6 +84,8 @@ const TRIM_DELAY_MS: u32 = 3000;
 /// Eye break: 20 minutes of activity, 20 seconds of looking away (PRODUCT v1.2).
 const EYE_WORK_MS: u64 = 20 * 60_000;
 const EYE_BREAK_SECONDS: u32 = 20;
+/// An eye break due this close before a computer break is skipped (the computer break wins).
+const EYE_BEFORE_COMPUTER_MS: u64 = 2 * 60_000;
 /// A pause in input this long counts as a natural break.
 const NATURAL_BREAK_MS: u64 = 5 * 60_000;
 const TIMER_BREAK: usize = 11;
@@ -221,8 +223,10 @@ pub struct App {
     idle_fade: f32,
     /// Start of the current stretch of continuous activity (for eye breaks).
     active_since: u64,
-    /// Seconds left in a running eye break.
-    break_left: Option<u32>,
+    /// Start of the current stretch of activity (for computer breaks).
+    work_since: u64,
+    /// The running break and its seconds left.
+    break_left: Option<(Break, u32)>,
     /// When the bedtime reminder last showed (at most once per 12 h).
     bedtime_shown: u64,
     cursor: engine::cursor::CursorDimmer,
@@ -271,8 +275,57 @@ fn scene_filter(e: SceneEffect) -> Filter {
     }
 }
 
-fn break_content(seconds: u32) -> osd::Content {
-    osd::Content::Message("Eye break".into(), format!("Look at something ~6 m away · {seconds} s"))
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Break {
+    /// 20-20-20: look into the distance for 20 seconds.
+    Eye,
+    /// Step away from the computer for a few minutes.
+    Computer,
+}
+
+impl Break {
+    fn title(self) -> &'static str {
+        match self {
+            Break::Eye => "Eye break",
+            Break::Computer => "Computer break",
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Due {
+    Nothing,
+    Start(Break),
+    /// An eye break is due, but a computer break follows shortly: skip it.
+    SkipEye,
+}
+
+/// Which break (if any) starts now. `active_since` / `work_since` start the eye / computer stretches.
+fn break_due(s: &Settings, now: u64, active_since: u64, work_since: u64, running: Option<Break>) -> Due {
+    if running == Some(Break::Computer) {
+        return Due::Nothing;
+    }
+    let computer_at = work_since + s.break_every as u64 * 60_000;
+    if s.computer_breaks && now >= computer_at {
+        // The computer break wins, even over a running eye break.
+        return Due::Start(Break::Computer);
+    }
+    if !s.eye_breaks || running.is_some() || now.saturating_sub(active_since) < EYE_WORK_MS {
+        return Due::Nothing;
+    }
+    if s.computer_breaks && computer_at - now <= EYE_BEFORE_COMPUTER_MS {
+        Due::SkipEye
+    } else {
+        Due::Start(Break::Eye)
+    }
+}
+
+fn break_content(kind: Break, seconds: u32) -> osd::Content {
+    let text = match kind {
+        Break::Eye => format!("Look at something ~6 m away · {seconds} s"),
+        Break::Computer => format!("Step away from the screen · {}:{:02}", seconds / 60, seconds % 60),
+    };
+    osd::Content::Message(kind.title().into(), text)
 }
 
 /// "1 h 20 min" / "45 min".
@@ -348,6 +401,7 @@ impl App {
                 recent_apps: Vec::new(),
                 idle_fade: 0.0,
                 active_since: now_ms(),
+                work_since: now_ms(),
                 break_left: None,
                 bedtime_shown: 0,
                 cursor: Default::default(),
@@ -1075,22 +1129,20 @@ impl App {
         if idle >= NATURAL_BREAK_MS {
             self.active_since = now;
         }
+        // Being away for a whole break counts as one.
+        if self.break_left.is_none() && idle >= self.settings.break_minutes as u64 * 60_000 {
+            self.work_since = now;
+        }
         let busy = self.paused_until.is_some()
             || self.fullscreen
             || foreground::is_fullscreen(unsafe { GetForegroundWindow() });
-        if self.settings.eye_breaks
-            && self.break_left.is_none()
-            && now.saturating_sub(self.active_since) >= EYE_WORK_MS
-            && !busy
-        {
-            info!("eye break");
-            self.active_since = now;
-            self.break_left = Some(EYE_BREAK_SECONDS);
-            if let Some(o) = self.osd.as_mut() {
-                o.set_palette(theme::palette(self.settings.theme));
-                o.show_for(break_content(EYE_BREAK_SECONDS), (EYE_BREAK_SECONDS + 2) * 1000);
+        if !busy {
+            let running = self.break_left.map(|(k, _)| k);
+            match break_due(&self.settings, now, self.active_since, self.work_since, running) {
+                Due::Start(kind) => self.start_break(kind),
+                Due::SkipEye => self.active_since = now,
+                Due::Nothing => {}
             }
-            unsafe { SetTimer(Some(self.hwnd), TIMER_BREAK, 1000, None) };
         }
         if self.settings.bedtime_reminder && now.saturating_sub(self.bedtime_shown) > 12 * 3_600_000 {
             let (_, _, t, _) = schedule::now_local();
@@ -1112,24 +1164,58 @@ impl App {
         }
     }
 
+    fn start_break(&mut self, kind: Break) {
+        let seconds = match kind {
+            Break::Eye => EYE_BREAK_SECONDS,
+            Break::Computer => self.settings.break_minutes * 60,
+        };
+        info!("{} ({seconds} s)", kind.title().to_lowercase());
+        let now = now_ms();
+        self.active_since = now;
+        if kind == Break::Computer {
+            self.work_since = now;
+        }
+        self.break_left = Some((kind, seconds));
+        if let Some(o) = self.osd.as_mut() {
+            o.set_palette(theme::palette(self.settings.theme));
+            o.show_for(break_content(kind, seconds), (seconds + 2) * 1000);
+        }
+        unsafe { SetTimer(Some(self.hwnd), TIMER_BREAK, 1000, None) };
+    }
+
     fn on_break_tick(&mut self) {
-        let Some(left) = self.break_left else { return };
+        let Some((kind, left)) = self.break_left else { return };
         let left = left.saturating_sub(1);
         if left == 0 {
             self.break_left = None;
             unsafe {
                 let _ = KillTimer(Some(self.hwnd), TIMER_BREAK);
             }
+            let next = match kind {
+                Break::Eye => "see you in 20 minutes".to_string(),
+                Break::Computer => {
+                    // The next stretches start now.
+                    let now = now_ms();
+                    self.active_since = now;
+                    self.work_since = now;
+                    format!("next break in {}", fmt_minutes(self.settings.break_every as f64))
+                }
+            };
             if let Some(o) = self.osd.as_mut() {
-                o.update(osd::Content::Message(
-                    "Break done".into(),
-                    "Back to work — see you in 20 minutes".into(),
-                ));
+                o.show_for(
+                    osd::Content::Message("Break done".into(), format!("Back to work — {next}")),
+                    4000,
+                );
             }
         } else {
-            self.break_left = Some(left);
+            self.break_left = Some((kind, left));
             if let Some(o) = self.osd.as_mut() {
-                o.update(break_content(left));
+                // Another OSD (brightness, scene) may have taken over: wait for it to fade, then show again.
+                if o.hidden() {
+                    o.show_for(break_content(kind, left), (left + 2) * 1000);
+                } else if o.title() == Some(kind.title()) {
+                    o.update(break_content(kind, left));
+                }
             }
         }
     }
@@ -1408,8 +1494,13 @@ impl App {
                 let hk = self.settings.hotkeys.clone();
                 let sk = self.settings.scenes.iter().map(|s| s.hotkey.clone()).collect();
                 let auto = self.settings.autostart;
+                let breaks = self.settings.computer_breaks;
                 self.sync_settings();
                 f(&mut self.settings);
+                if self.settings.computer_breaks && !breaks {
+                    // Count the first stretch from when the reminder was turned on.
+                    self.work_since = now_ms();
+                }
                 self.settings_changed(hk, sk, auto);
             }
             Action::Preview(k) => {
@@ -2059,5 +2150,38 @@ pub fn run_loop() -> i32 {
             DispatchMessageW(&msg);
         }
         msg.wParam.0 as i32
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const MIN: u64 = 60_000;
+
+    fn settings(eye: bool, computer: bool) -> Settings {
+        Settings { eye_breaks: eye, computer_breaks: computer, break_every: 60, ..Settings::default() }
+    }
+
+    #[test]
+    fn computer_break_after_the_interval() {
+        let s = settings(false, true);
+        assert_eq!(break_due(&s, 59 * MIN, 0, 0, None), Due::Nothing);
+        assert_eq!(break_due(&s, 60 * MIN, 0, 0, None), Due::Start(Break::Computer));
+        assert_eq!(break_due(&s, 70 * MIN, 0, 0, Some(Break::Computer)), Due::Nothing);
+        assert_eq!(break_due(&settings(false, false), 600 * MIN, 0, 0, None), Due::Nothing);
+    }
+
+    #[test]
+    fn computer_break_wins_over_eye_break() {
+        let s = settings(true, true);
+        // Both due: the computer break starts, even during an eye break.
+        assert_eq!(break_due(&s, 60 * MIN, 40 * MIN, 0, None), Due::Start(Break::Computer));
+        assert_eq!(break_due(&s, 60 * MIN, 40 * MIN, 0, Some(Break::Eye)), Due::Start(Break::Computer));
+        // An eye break right before a computer break is skipped; earlier ones run.
+        assert_eq!(break_due(&s, 59 * MIN, 39 * MIN, 0, None), Due::SkipEye);
+        assert_eq!(break_due(&s, 40 * MIN, 20 * MIN, 0, None), Due::Start(Break::Eye));
+        // Eye breaks alone don't care about the computer clock.
+        assert_eq!(break_due(&settings(true, false), 59 * MIN, 39 * MIN, 0, None), Due::Start(Break::Eye));
     }
 }

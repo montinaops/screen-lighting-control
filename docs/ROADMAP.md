@@ -34,3 +34,7 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 ## Milestone v1.3 — integrations ✅ (released 1.3.0)
 - ~~Philips Hue / Home Assistant~~ — dropped (D18: SLC stays network-free)
 - ✅ Ambient light sensor auto-brightness with a learned offset (D19) — #21
+
+## 1.5 — computer breaks
+- ✅ Hourly computer-break reminder (configurable interval and 5/10/15-minute length; gentle OSD countdown; wins over
+  eye breaks)

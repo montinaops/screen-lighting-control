@@ -7,7 +7,7 @@
 use super::d2d::{self, Align, Rect, Surface, Weight};
 use super::theme::Palette;
 use super::widgets::{self, glyph};
-use crate::model::{self, ScheduleMode, Settings, Theme};
+use crate::model::{self, ScheduleMode, Settings, Theme, BREAK_LENGTHS};
 use crate::{cities, color, hotkeys, schedule, win};
 use windows::core::{w, PCWSTR};
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
@@ -109,6 +109,9 @@ enum Id {
     AutoStart,
     IdleDim,
     EyeBreaks,
+    ComputerBreaks,
+    BreakEvery,
+    BreakLength(u8),
     BedtimeReminder,
     BedtimeMinutes,
     IdleMinutes,
@@ -449,6 +452,33 @@ impl SettingsWindow {
             "Every 20 minutes of screen time, look at something ~6 m away for 20 seconds. Skipped in fullscreen apps.",
             s.eye_breaks,
         );
+        b.toggle_row(
+            Id::ComputerBreaks,
+            "Computer breaks",
+            "A reminder to step away from the screen after a stretch of activity. Being away that long counts as a break; skipped in fullscreen apps.",
+            s.computer_breaks,
+        );
+        if s.computer_breaks {
+            b.slider_row(
+                Id::BreakEvery,
+                "Every",
+                "",
+                (s.break_every as f32 - 30.0) / 90.0,
+                format!("{} min", s.break_every),
+                false,
+            );
+            let sel = BREAK_LENGTHS.iter().position(|&m| m == s.break_minutes).unwrap_or(0);
+            b.row(
+                "Break length",
+                "",
+                vec![(
+                    Some(Id::BreakLength(0)),
+                    260.0,
+                    32.0,
+                    Kind::Segmented(vec!["5 min", "10 min", "15 min"], sel),
+                )],
+            );
+        }
         b.toggle_row(
             Id::BedtimeReminder,
             "Bedtime reminder",
@@ -1046,6 +1076,10 @@ impl SettingsWindow {
                 let v = (f * 100.0 - 50.0).round();
                 self.edit(move |s| s.ambient_offset = v);
             }
+            Id::BreakEvery => {
+                let m = ((30.0 + f * 90.0) / 5.0).round() as u32 * 5;
+                self.edit(move |s| s.break_every = m);
+            }
             Id::BedtimeMinutes => {
                 let m = ((10.0 + f * 170.0) / 5.0).round() as u32 * 5;
                 self.edit(move |s| s.bedtime_minutes = m);
@@ -1110,6 +1144,11 @@ impl SettingsWindow {
             Id::AutoStart => self.edit(|s| s.autostart = !s.autostart),
             Id::IdleDim => self.edit(|s| s.idle_dim = !s.idle_dim),
             Id::EyeBreaks => self.edit(|s| s.eye_breaks = !s.eye_breaks),
+            Id::ComputerBreaks => self.edit(|s| s.computer_breaks = !s.computer_breaks),
+            Id::BreakLength(_) => {
+                let seg = self.segment_at(id, x, BREAK_LENGTHS.len());
+                self.edit(move |s| s.break_minutes = BREAK_LENGTHS[seg]);
+            }
             Id::BedtimeReminder => self.edit(|s| s.bedtime_reminder = !s.bedtime_reminder),
             Id::Osd => self.edit(|s| s.osd = !s.osd),
             Id::Theme(_) => {
@@ -1249,6 +1288,7 @@ impl SettingsWindow {
             Id::CopyDiag => self.send(Action::CopyDiagnostics),
             Id::OpenFolder => self.send(Action::OpenSettingsFolder),
             Id::AmbientOffset
+            | Id::BreakEvery
             | Id::BedtimeMinutes
             | Id::IdleMinutes
             | Id::IdleLevel

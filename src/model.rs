@@ -212,6 +212,10 @@ pub struct Settings {
     pub idle_level: f32,
     /// 20-20-20 eye-break reminders.
     pub eye_breaks: bool,
+    /// Computer-break reminders: step away for `break_minutes` after `break_every` minutes of activity.
+    pub computer_breaks: bool,
+    pub break_every: u32,
+    pub break_minutes: u32,
     /// One-time reminder this many minutes before bedtime (wake − 8 h).
     pub bedtime_reminder: bool,
     pub bedtime_minutes: u32,
@@ -240,6 +244,9 @@ impl Default for Settings {
             idle_minutes: 5,
             idle_level: 30.0,
             eye_breaks: false,
+            computer_breaks: false,
+            break_every: 60,
+            break_minutes: 5,
             bedtime_reminder: false,
             bedtime_minutes: 60,
             dim_cursor: false,
@@ -248,6 +255,9 @@ impl Default for Settings {
         }
     }
 }
+
+/// Computer-break lengths offered in Settings (minutes).
+pub const BREAK_LENGTHS: [u32; 3] = [5, 10, 15];
 
 pub fn format_hm(minutes: u32) -> String {
     format!("{:02}:{:02}", (minutes / 60) % 24, minutes % 60)
@@ -376,6 +386,12 @@ impl Settings {
         s.pause_fullscreen = ini.get_bool("general", "pause_fullscreen").unwrap_or(false);
         s.idle_dim = ini.get_bool("general", "idle_dim").unwrap_or(false);
         s.eye_breaks = ini.get_bool("general", "eye_breaks").unwrap_or(false);
+        s.computer_breaks = ini.get_bool("general", "computer_breaks").unwrap_or(false);
+        s.break_every = ini.get_parse::<u32>("general", "break_every").unwrap_or(60).clamp(30, 120);
+        s.break_minutes = ini
+            .get_parse::<u32>("general", "break_minutes")
+            .filter(|m| BREAK_LENGTHS.contains(m))
+            .unwrap_or(5);
         s.dim_cursor = ini.get_bool("general", "dim_cursor").unwrap_or(false);
         s.ambient = ini.get_bool("general", "ambient").unwrap_or(false);
         s.ambient_offset =
@@ -417,6 +433,9 @@ impl Settings {
         ini.set("general", "pause_fullscreen", self.pause_fullscreen as u8);
         ini.set("general", "idle_dim", self.idle_dim as u8);
         ini.set("general", "eye_breaks", self.eye_breaks as u8);
+        ini.set("general", "computer_breaks", self.computer_breaks as u8);
+        ini.set("general", "break_every", self.break_every);
+        ini.set("general", "break_minutes", self.break_minutes);
         ini.set("general", "dim_cursor", self.dim_cursor as u8);
         ini.set("general", "ambient", self.ambient as u8);
         ini.set("general", "ambient_offset", format!("{:.0}", self.ambient_offset));
@@ -520,6 +539,9 @@ mod tests {
         s.idle_minutes = 12;
         s.idle_level = 20.0;
         s.eye_breaks = true;
+        s.computer_breaks = true;
+        s.break_every = 90;
+        s.break_minutes = 10;
         s.dim_cursor = true;
         s.ambient = true;
         s.ambient_offset = -10.0;

@@ -4,6 +4,15 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-03
+
+### Added
+- Computer breaks (Settings › General › Reminders): after a stretch of activity (every 30–120 min, default 60), an OSD
+  countdown reminds you to step away from the screen for 5, 10 or 15 minutes. A gentle reminder only — nothing is
+  dimmed or blocked. Being away for a whole break counts as one; skipped in fullscreen apps and while paused. A
+  computer break also resets the 20-20-20 clock, replaces a running eye break, and an eye break right before one is
+  skipped.
+
 ## [1.4.3] - 2026-10-01
 
 ### Changed

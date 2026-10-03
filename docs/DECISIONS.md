@@ -9,7 +9,7 @@ follow from them.
 | D2 | Priority | **Maximum performance, minimum size, single `.exe`** | Stressed by the owner; guides every other technical choice. |
 | D3 | Language | **Rust** (`windows` crate, raw Win32) | Owner asked for the fastest/tiniest option; Rust matches C in speed and size (< 1 MB static exe) with memory safety. |
 | D4 | UI | **Native Win32 + Direct2D**, custom-drawn | No UI framework: instant startup, lowest memory. |
-| D5 | Repository | **Private**, `MONTINA-Ops/screen-lighting-control` | |
+| D5 | Repository | **Private**, `montinaops/screen-lighting-control` | |
 | D6 | Dimming | **Hybrid pipeline**: hardware (DDC/CI, panel) → gamma → overlay | The main thing that sets SLC apart from Dimmer and f.lux. |
 | D7 | App shape | **Tray-first**: flyout for quick control, settings window on demand | |
 | D8 | Warmth | **Automatic schedule on by default** (f.lux-style) with manual override | |

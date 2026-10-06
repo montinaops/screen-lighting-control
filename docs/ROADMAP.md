@@ -43,5 +43,6 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 
 ## Launch — open source
 - ✅ 1.5.4: MIT License (D20)
-- ⬜ Rewrite author emails, GitHub Support purge of old PR commits, make the repo public (D22)
-- ⬜ winget manifest (D21)
+- ✅ Public repo with clean history, tags and releases (D22)
+- 🟨 winget package `MONTINA-Ops.ScreenLightingControl` (D23) — [microsoft/winget-pkgs#447709](https://github.com/microsoft/winget-pkgs/pull/447709), in Microsoft's review
+- ⬜ README: `winget install slc` once the package is accepted

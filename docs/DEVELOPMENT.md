@@ -4,7 +4,7 @@
 
 | Where | Target | Linker / tools |
 |---|---|---|
-| CI and releases (GitHub Actions, `windows-latest`) | `x86_64-pc-windows-msvc` | MSVC `link.exe` (static CRT via `.cargo/config.toml`) |
+| `.local-ci` and releases (`scripts/cargo-msvc.sh`, Visual Studio Build Tools) | `x86_64-pc-windows-msvc` | MSVC `link.exe` (static CRT via `.cargo/config.toml`) |
 | Local dev without Visual Studio | `x86_64-pc-windows-gnullvm` | [llvm-mingw](https://github.com/mstorsjo/llvm-mingw) (`clang` as the linker, `llvm-dlltool` for raw-dylib imports) |
 
 `build.rs` embeds the icon, manifest and version info with `embed-resource`: MSVC uses `rc.exe` from the Windows SDK;
@@ -35,18 +35,20 @@ scripts/cargo.sh fmt --all
 ### Building on Windows
 `scripts/build.ps1` (MSVC toolchain) builds a release and prints the exe size.
 
-## Checks required before merging (enforced by CI)
+## Checks required before merging (`.local-ci`)
+
+`local-ci` (claude-toolkit) runs `.local-ci` and posts a `local-ci` status to the PR. There is no GitHub Actions: its minutes cost money on a private repo.
 - `cargo fmt --all -- --check`
 - `cargo clippy --all-targets -- -D warnings`
 - `cargo test`
 - Release `slc.exe` ≤ 1 MiB (size budget from PRODUCT §14)
 
-## Smoke test (CI)
+## Smoke test
 `scripts/smoke.ps1 -Exe <slc.exe>` runs end to end on a clean machine: CLI, self-test, tray app start → commands →
 clean exit, `--reset`, and an install → uninstall round trip that must leave **nothing** behind (folders, shortcut,
-registry, autostart, process). CI runs it on `windows-2022` (Windows 10-based) and `windows-2025` (Windows 11 24H2-based).
+registry, autostart, process). `.local-ci` runs it in a throwaway Windows Sandbox VM (`win-sandbox`, claude-toolkit), on the host's Windows build.
 Don't run it on a machine where SLC is installed for real: the round trip uninstalls it.
 
 ## Branching and PRs
-- `feat/<name>`, `fix/<name>`, `docs/<name>`; one PR per roadmap item (see `ROADMAP.md`); squash-merge after CI passes.
+- `feat/<name>`, `fix/<name>`, `docs/<name>`; one PR per roadmap item (see `ROADMAP.md`); squash-merge after `local-ci` passes.
 - Update `ROADMAP.md` status and `CHANGELOG.md` in the same PR.

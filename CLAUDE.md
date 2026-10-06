@@ -13,17 +13,19 @@ scripts/cargo.sh test
 scripts/cargo.sh build --release   # -> %USERPROFILE%\.slc-tools\target\x86_64-pc-windows-gnullvm\release\slc.exe
 ```
 
-CI and releases use the MSVC target on `windows-latest`; that build is the one that counts.
+`.local-ci` and releases use the MSVC target (`scripts/cargo-msvc.sh`, the Windows cargo with Visual Studio Build Tools); that build is the one that counts.
 
-## Checks before merging (enforced by CI)
+## Checks before merging (`.local-ci`)
+
+There is no GitHub Actions (its minutes cost money on a private repo, Windows minutes double). `local-ci` (claude-toolkit) runs `.local-ci` on this machine and posts a `local-ci` status to the PR; merge only when it's green on the head commit.
 
 - fmt, clippy with `-D warnings`, tests, release build.
 - Release `slc.exe` ≤ 1 MiB (size budget, PRODUCT §14). Report the size change in the PR when it grows.
-- `slc.exe --self-test`, and `scripts/smoke.ps1` on Windows 10 and 11 runners.
+- `slc.exe --version`, and `scripts/smoke.ps1` in a throwaway Windows Sandbox VM (`win-sandbox`; Windows 10, the host's build). Windows 11 is no longer covered automatically.
 
 ## Don't disturb the real install
 
-The user runs SLC day to day. `scripts/smoke.ps1` does an install → uninstall round trip that **uninstalls the real copy**: never run it on this machine. Ask before stopping the running `slc.exe`, replacing the installed copy, or changing display gamma/brightness live. Back up the user's settings before testing against them and restore them afterwards.
+The user runs SLC day to day. `scripts/smoke.ps1` does an install → uninstall round trip that **uninstalls the real copy**: never run it on this machine, only inside Windows Sandbox (as `.local-ci` does). Ask before stopping the running `slc.exe`, replacing the installed copy, or changing display gamma/brightness live. Back up the user's settings before testing against them and restore them afterwards.
 
 ## Rules
 
@@ -31,6 +33,6 @@ The user runs SLC day to day. `scripts/smoke.ps1` does an install → uninstall 
 - Native Win32 + Direct2D only. No UI framework, no new heavy dependencies; justify any new crate against the size budget.
 - Decision logic (schedule, solar math, color, safety) goes in pure functions with unit tests, separate from Win32 calls.
 - Product decisions go in `docs/DECISIONS.md` (numbered `D<n>` rows).
-- Workflow: `feat/`, `fix/`, `docs/` branches; one PR per roadmap item, merged by you (squash) once CI passes; update `CHANGELOG.md`, `docs/ROADMAP.md`, and `docs/QA.md` in the same PR. Commit subjects look like `feat: computer-break reminders; release 1.5.0 (#33)`.
-- Releases: bump `version` in `Cargo.toml`, merge, then push tag `vX.Y.Z` on the merge commit. `release.yml` checks that the version matches the tag, builds, and publishes `slc.exe` plus its `.sha256`.
+- Workflow: `feat/`, `fix/`, `docs/` branches; one PR per roadmap item, merged by you (squash) once `local-ci` passes; update `CHANGELOG.md`, `docs/ROADMAP.md`, and `docs/QA.md` in the same PR. Commit subjects look like `feat: computer-break reminders; release 1.5.0 (#33)`.
+- Releases: bump `version` in `Cargo.toml`, merge, then run `scripts/release.sh` on the updated `main`: it tests, builds with MSVC, checks the exe's version, tags `vX.Y.Z`, and publishes `slc.exe` plus its `.sha256` with the CHANGELOG section.
 - Proprietary code: never paste it into public gists, issues, or other services.

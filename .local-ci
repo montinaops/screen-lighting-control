@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# The checks every PR must pass, run on this machine by `local-ci` (claude-toolkit) in
+# place of GitHub Actions. Run it directly to check without posting a status.
+# Builds with the MSVC toolchain releases use, then runs the end-to-end smoke test
+# (an install -> uninstall round trip) in a throwaway Windows Sandbox VM via
+# `win-sandbox` (claude-toolkit): never on this machine, where SLC may be installed.
+set -euo pipefail
+cd "$(dirname "$0")"
+cargo=scripts/cargo-msvc.sh
+max_exe_bytes=1048576
+
+step() { echo; echo "== $*"; }
+
+step "format";        $cargo fmt --all -- --check
+step "clippy";        $cargo clippy --all-targets -- -D warnings
+step "test";          $cargo test
+step "release build"; $cargo build --release
+
+win_home=$(wslpath "$(cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')")
+exe="$win_home/.slc-tools/target-msvc/release/slc.exe"
+
+step "size budget"
+size=$(stat -c %s "$exe")
+echo "slc.exe: $size bytes"
+if [ "$size" -gt "$max_exe_bytes" ]; then
+	echo "slc.exe exceeds the size budget ($max_exe_bytes bytes)" >&2
+	exit 1
+fi
+
+step "version"
+"$exe" --version
+
+step "smoke test (Windows Sandbox)"
+stage=$(mktemp -d)
+trap 'rm -rf "$stage"' EXIT
+cp "$exe" scripts/smoke.ps1 "$stage/"
+# Stop makes a throw from smoke.ps1 end run.ps1 with exit 1 instead of being reported and
+# passed over, which once let a failed smoke test pass.
+printf '%s\r\n' '$ErrorActionPreference = "Stop"' '& "$PSScriptRoot\smoke.ps1" -Exe "$PSScriptRoot\slc.exe"' >"$stage/run.ps1"
+win-sandbox "$stage" run.ps1 900

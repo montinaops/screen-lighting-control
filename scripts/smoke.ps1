@@ -4,8 +4,7 @@
 # that must leave nothing behind.
 param([Parameter(Mandatory)][string]$Exe)
 $ErrorActionPreference = "Stop"
-$work = Join-Path $env:RUNNER_TEMP "slc-smoke"
-if (-not $env:RUNNER_TEMP) { $work = Join-Path $env:TEMP "slc-smoke" }
+$work = Join-Path $(if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:TEMP }) "slc-smoke"
 Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $work | Out-Null
 Copy-Item $Exe "$work\slc.exe"

@@ -123,16 +123,17 @@ reboots and port changes for the same physical monitor.
 ## 6. Build and release
 
 - `scripts/build.ps1` / `scripts/build.sh`: release build, prints the exe size.
-- **GitHub Actions** (`.github/workflows/ci.yml`): on PR and push, `windows-latest`: `cargo fmt --check`,
-  `cargo clippy -D warnings`, `cargo test`, release build, uploads `slc.exe`; fails if the exe is > 1 MB.
-- **Release** (`release.yml`): on tag `v*`, tests, builds, checks the exe version matches the tag, and publishes
-  `slc.exe` + SHA-256 with the CHANGELOG section as release notes.
+- **Local CI** (`.local-ci`, run by `local-ci` from WSL; GitHub Actions until 2026-10-05): `cargo fmt --check`,
+  `cargo clippy -D warnings`, `cargo test`, MSVC release build; fails if the exe is > 1 MB; then the smoke test
+  in Windows Sandbox. Posts a `local-ci` status to the PR.
+- **Release** (`scripts/release.sh`): tests, builds, checks the exe version matches `Cargo.toml`, tags, and
+  publishes `slc.exe` + SHA-256 with the CHANGELOG section as release notes.
 
 ## 7. Testing strategy
 
 - **Unit tests** (pure logic, run anywhere): color math, pipeline split, solar calculations against NOAA reference
   values, schedule curve, INI round-trip, hotkey parsing, city search.
-- **Smoke test** (Windows CI): `slc.exe --self-test` enumerates monitors, builds ramps, and creates/destroys an overlay
+- **Smoke test** (`.local-ci`, in Windows Sandbox): `slc.exe --self-test` enumerates monitors, builds ramps, and creates/destroys an overlay
   without showing anything, exiting with 0/1.
 - **Manual QA checklist**: `docs/QA.md`.
 

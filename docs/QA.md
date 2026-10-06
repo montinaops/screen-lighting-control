@@ -41,6 +41,7 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ 1.5.3: a filter scene's chip is no longer lit once the filter is off. Live 2026-10-06, installed release, real
   clicks: Darkroom chip lit with the filter on, unlit after the second click and after reopening the flyout
   (tray menu, panic and reset paths covered by the unit test)
+- ⚠️ 1.5.4: About page says "Open source under the MIT License" (string checked in the release exe, page not opened)
 - ✅ Settings: all six pages render; wrapped descriptions; Identify shows numbers
 - ✅ OSD for brightness / warmth / scenes / pause
 - ✅ Hotkeys fire (simulated key presses); 0 conflicts on the test machine

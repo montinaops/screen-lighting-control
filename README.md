@@ -16,7 +16,9 @@ and [f.lux](https://justgetflux.com/) (automatic warm light at night), and impro
 
 ## Install
 
-Download `slc.exe` from the [latest release](../../releases/latest) and run it. SLC starts in the tray (portable mode:
+Download `slc.exe` from the [latest release](../../releases/latest) and run it. The exe isn't code-signed yet, so
+Windows SmartScreen may say "Windows protected your PC": choose **More info › Run anyway**. Each release also has
+`slc.exe.sha256` so you can check the download. SLC starts in the tray (portable mode:
 settings are saved next to the exe). To install it for your user (Start menu, autostart, Apps & features entry), open
 **Settings › General › Install**, or run:
 
@@ -79,4 +81,4 @@ slc.exe --expand-range     (admin) allow warmer colors / deeper gamma dimming
 - [`docs/research.md`](docs/research.md) — research on Dimmer and f.lux
 - [`CHANGELOG.md`](CHANGELOG.md), [`NOTICE.md`](NOTICE.md)
 
-© MONTINA-Ops. All rights reserved.
+Free and open source under the [MIT License](LICENSE). © MONTINA-Ops.

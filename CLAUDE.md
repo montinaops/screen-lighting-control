@@ -35,4 +35,4 @@ The user runs SLC day to day. `scripts/smoke.ps1` does an install → uninstall 
 - Product decisions go in `docs/DECISIONS.md` (numbered `D<n>` rows).
 - Workflow: `feat/`, `fix/`, `docs/` branches; one PR per roadmap item, merged by you (squash) once `local-ci` passes; update `CHANGELOG.md`, `docs/ROADMAP.md`, and `docs/QA.md` in the same PR. Commit subjects look like `feat: computer-break reminders; release 1.5.0 (#33)`.
 - Releases: bump `version` in `Cargo.toml`, merge, then run `scripts/release.sh` on the updated `main`: it tests, builds with MSVC, checks the exe's version, tags `vX.Y.Z`, and publishes `slc.exe` plus its `.sha256` with the CHANGELOG section.
-- Proprietary code: never paste it into public gists, issues, or other services.
+- Open source (MIT, D20), public repo: never commit secrets, personal paths, or personal email addresses.

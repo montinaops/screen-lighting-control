@@ -40,3 +40,8 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
   eye breaks)
 - ✅ 1.5.2: the flyout no longer jumps when "Return to schedule" is clicked
 - ✅ 1.5.3: a filter scene no longer stays highlighted after it is toggled off
+
+## Launch — open source
+- ✅ 1.5.4: MIT License (D20)
+- ⬜ Rewrite author emails, GitHub Support purge of old PR commits, make the repo public (D22)
+- ⬜ winget manifest (D21)

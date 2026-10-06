@@ -4,6 +4,11 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.4] - 2026-10-06
+
+### Changed
+- SLC is now free and open source under the MIT License. The About page says so.
+
 ## [1.5.3] - 2026-10-06
 
 ### Fixed

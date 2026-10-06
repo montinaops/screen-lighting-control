@@ -871,7 +871,7 @@ impl SettingsWindow {
         b.push_line(Some(Id::OpenFolder), 34.0, Kind::Button("Open settings folder".into(), false));
         b.y += 12.0;
         b.text("City data © GeoNames (CC BY 4.0). Solar equations: NOAA.", self.palette.subtext);
-        b.text("© MONTINA-Ops. All rights reserved.", self.palette.subtext);
+        b.text("© MONTINA-Ops. Open source under the MIT License.", self.palette.subtext);
     }
 
     // ----- native edit controls ------------------------------------------------------------------

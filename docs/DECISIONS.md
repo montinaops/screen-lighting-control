@@ -9,7 +9,7 @@ follow from them.
 | D2 | Priority | **Maximum performance, minimum size, single `.exe`** | Stressed by the owner; guides every other technical choice. |
 | D3 | Language | **Rust** (`windows` crate, raw Win32) | Owner asked for the fastest/tiniest option; Rust matches C in speed and size (< 1 MB static exe) with memory safety. |
 | D4 | UI | **Native Win32 + Direct2D**, custom-drawn | No UI framework: instant startup, lowest memory. |
-| D5 | Repository | **Private**, `montinaops/screen-lighting-control` | |
+| D5 | Repository | ~~Private~~ → **public** (D20), `montinaops/screen-lighting-control` | |
 | D6 | Dimming | **Hybrid pipeline**: hardware (DDC/CI, panel) → gamma → overlay | The main thing that sets SLC apart from Dimmer and f.lux. |
 | D7 | App shape | **Tray-first**: flyout for quick control, settings window on demand | |
 | D8 | Warmth | **Automatic schedule on by default** (f.lux-style) with manual override | |
@@ -24,3 +24,6 @@ follow from them.
 | D17 | Dependencies | Only the `windows` crate | Size and supply-chain risk. |
 | D18 | Smart lights | **Dropped** (Philips Hue / Home Assistant) — owner, 2026-09-30 | Keeps SLC strictly network-free (principle 4). |
 | D19 | Light sensor | **Build ambient-light auto-brightness** even though it can't be tested on the owner's hardware — owner, 2026-09-30 | Hidden when no sensor exists; covered by unit tests and the no-sensor path. |
+| D20 | License | **Open source, MIT** — owner, 2026-10-06 | Free. The About page and `Cargo.toml` say MIT; city data stays CC BY 4.0 (NOTICE). |
+| D21 | Launch distribution | **GitHub Releases + winget**, **unsigned** for now, no landing page — owner, 2026-10-06 | $0. README explains the SmartScreen prompt; signing can come later. |
+| D22 | Going public | **Make this repo public** after rewriting author emails to the GitHub noreply address and asking GitHub Support to purge the old PR commits — owner, 2026-10-06 | PR refs are read-only, so only Support can remove them; the repo stays private until then. |

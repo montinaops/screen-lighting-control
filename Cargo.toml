@@ -1,9 +1,9 @@
 [package]
 name = "slc"
-version = "1.5.3"
+version = "1.5.4"
 edition = "2021"
 description = "Screen Lighting Control — tiny Windows screen dimmer and color temperature controller"
-license = "LicenseRef-Proprietary"
+license = "MIT"
 publish = false
 build = "build.rs"
 

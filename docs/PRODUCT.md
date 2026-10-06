@@ -228,7 +228,7 @@ A single resizable window with pages on the left:
 - **Scenes**: list, edit, hotkey assignment.
 - **Hotkeys**: all bindings, rebindable; conflicts shown in red.
 - **Rules** (roadmap v1.1): per-app rules.
-- **About**: version, links, diagnostics copy button.
+- **About**: version, links, diagnostics copy button, license (MIT) and data credits.
 
 ---
 

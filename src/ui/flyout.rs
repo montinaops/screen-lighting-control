@@ -177,6 +177,23 @@ fn hit_test(l: &Layout, x: f32, y: f32) -> Option<Hit> {
     None
 }
 
+/// Top-left corner for a `w`×`h` flyout in work area `wa`: centered on the anchor point `pt`, above the taskbar
+/// when it is at the bottom, otherwise hugging the work area edge nearest the anchor. With `bottom` (a visible
+/// flyout changing height) the bottom edge stays put, so the flyout doesn't jump.
+fn place(pt: POINT, bottom: Option<i32>, w: i32, h: i32, wa: RECT, margin: i32) -> (i32, i32) {
+    let x = (pt.x - w / 2).clamp(wa.left + margin, wa.right - w - margin);
+    let y = if let Some(b) = bottom {
+        b - h
+    } else if pt.y >= wa.bottom {
+        wa.bottom - h - margin
+    } else if pt.y <= wa.top {
+        wa.top + margin
+    } else {
+        pt.y - h - margin
+    };
+    (x, y.min(wa.bottom - h - margin).max(wa.top + margin))
+}
+
 pub fn kelvin_from_frac(f: f32) -> u32 {
     let k = color::MIN_KELVIN as f32 + f * (color::MAX_KELVIN - color::MIN_KELVIN) as f32;
     ((k / 50.0).round() * 50.0) as u32
@@ -265,14 +282,11 @@ impl Flyout {
     }
 
     pub fn set_state(&mut self, state: State, palette: Palette) {
-        let resize = state.monitors.len() != self.state.monitors.len()
-            || state.scenes != self.state.scenes
-            || state.deep_dim_countdown.is_some() != self.state.deep_dim_countdown.is_some()
-            || state.overriding != self.state.overriding;
+        let old_height = self.layout.height;
         self.state = state;
         self.palette = palette;
         self.layout = layout(&self.state);
-        if resize && self.visible() {
+        if self.layout.height != old_height && self.visible() {
             self.position(None);
         }
         unsafe {
@@ -293,11 +307,14 @@ impl Flyout {
 
     fn position(&mut self, anchor: Option<RECT>) {
         unsafe {
+            // A visible flyout being re-laid out keeps its bottom edge and grows or shrinks upward.
+            let mut bottom = None;
             let pt = match anchor {
                 Some(r) => POINT { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 },
                 None => {
                     let mut wr = RECT::default();
                     if self.visible() && GetWindowRect(self.hwnd, &mut wr).is_ok() {
+                        bottom = Some(wr.bottom);
                         POINT { x: (wr.left + wr.right) / 2, y: wr.bottom - 1 }
                     } else {
                         let mut p = POINT::default();
@@ -319,17 +336,7 @@ impl Flyout {
             );
             let s = dx as f32 / 96.0;
             let (w, h) = ((WIDTH * s).round() as i32, (self.layout.height * s).round() as i32);
-            let wa = mi.rcWork;
-            let margin = (12.0 * s) as i32;
-            let x = (pt.x - w / 2).clamp(wa.left + margin, wa.right - w - margin);
-            // Above the taskbar when it is at the bottom; otherwise hug the work area edge nearest the anchor.
-            let y = if pt.y >= wa.bottom {
-                wa.bottom - h - margin
-            } else if pt.y <= wa.top {
-                wa.top + margin
-            } else {
-                (pt.y - h - margin).clamp(wa.top + margin, wa.bottom - h - margin)
-            };
+            let (x, y) = place(pt, bottom, w, h, mi.rcWork, (12.0 * s) as i32);
             let _ = SetWindowPos(self.hwnd, Some(HWND_TOPMOST), x, y, w, h, SWP_NOACTIVATE);
         }
     }
@@ -676,6 +683,21 @@ mod tests {
         assert_eq!(kelvin_from_frac(0.5) % 50, 0);
         assert_eq!(brightness_from_frac(0.0), 1.0);
         assert_eq!(brightness_from_frac(1.0), 100.0);
+    }
+
+    #[test]
+    fn relayout_keeps_the_bottom_edge() {
+        let wa = RECT { left: 0, top: 0, right: 1920, bottom: 1040 };
+        let tray = POINT { x: 1800, y: 1060 };
+        let (x, y) = place(tray, None, 340, 300, wa, 12);
+        assert_eq!((x, y), (1920 - 340 - 12, 1040 - 300 - 12));
+        // Same height again (e.g. "Return to schedule" clicked): no movement.
+        let centre = POINT { x: x + 170, y: y + 300 - 1 };
+        assert_eq!(place(centre, Some(y + 300), 340, 300, wa, 12), (x, y));
+        // Taller (deep-dim banner): grows upward, bottom edge unchanged.
+        assert_eq!(place(centre, Some(y + 300), 340, 356, wa, 12), (x, y + 300 - 356));
+        // Taller than the work area: the top edge wins.
+        assert_eq!(place(centre, Some(y + 300), 340, 1100, wa, 12).1, 12);
     }
 
     #[test]

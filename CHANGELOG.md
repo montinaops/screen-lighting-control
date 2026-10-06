@@ -4,6 +4,12 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-10-06
+
+### Fixed
+- The tray flyout no longer jumps up a little when you click "Return to schedule" (or when the deep-dim banner or a
+  display appears or disappears). It now keeps its bottom edge in place and only grows or shrinks upward.
+
 ## [1.5.1] - 2026-10-03
 
 ### Fixed

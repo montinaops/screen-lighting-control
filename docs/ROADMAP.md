@@ -38,3 +38,4 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 ## 1.5 — computer breaks
 - ✅ Hourly computer-break reminder (configurable interval and 5/10/15-minute length; gentle OSD countdown; wins over
   eye breaks)
+- ✅ 1.5.2: the flyout no longer jumps when "Return to schedule" is clicked

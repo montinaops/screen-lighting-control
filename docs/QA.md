@@ -38,8 +38,9 @@ Run on a real Windows machine before tagging a release. ✅ = verified for v1.0.
 - ✅ 1.3.4: **real mouse clicks** on the tray icon: left click opens the flyout, second click closes it; right click shows the dark menu with Open / Settings… (earlier tests opened the flyout only via a second launch, which hid the double-toggle bug)
 - ✅ Flyout opens above the tray, updates live, closes on focus loss; deep-dim banner counts down and reverts to 5%
 - ✅ 1.5.2: flyout keeps its position when "Return to schedule" appears or is clicked. Live, 1.5.1 vs 1.5.2 at 100% DPI: 1.5.1 moved up 13 px on each toggle (531 → 518 → 505), 1.5.2 stayed at 531
-- ⚠️ 1.5.3: a filter scene's chip is no longer lit once the filter is off (clicked again, tray menu, panic, reset);
-  covered by a unit test, not observed live
+- ✅ 1.5.3: a filter scene's chip is no longer lit once the filter is off. Live 2026-10-06, installed release, real
+  clicks: Darkroom chip lit with the filter on, unlit after the second click and after reopening the flyout
+  (tray menu, panic and reset paths covered by the unit test)
 - ✅ Settings: all six pages render; wrapped descriptions; Identify shows numbers
 - ✅ OSD for brightness / warmth / scenes / pause
 - ✅ Hotkeys fire (simulated key presses); 0 conflicts on the test machine

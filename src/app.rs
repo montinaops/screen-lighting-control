@@ -275,6 +275,15 @@ fn scene_filter(e: SceneEffect) -> Filter {
     }
 }
 
+/// The scene chip to highlight in the flyout. A filter scene is lit only while its filter is on, so toggling it off
+/// (by clicking it again, the tray menu, `--filter`, panic or reset) clears the highlight.
+fn highlighted_scene(scenes: &[model::Scene], filter: Filter, active: Option<usize>) -> Option<usize> {
+    if filter != Filter::None {
+        return scenes.iter().position(|s| scene_filter(s.effect) == filter);
+    }
+    active.filter(|&i| scenes.get(i).is_some_and(|s| scene_filter(s.effect) == Filter::None))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Break {
     /// 20-20-20: look into the distance for 20 seconds.
@@ -1253,11 +1262,7 @@ impl App {
                 })
                 .collect(),
             scenes: self.settings.scenes.iter().map(|s| s.name.clone()).collect(),
-            active_scene: if self.filter != Filter::None {
-                self.settings.scenes.iter().position(|s| scene_filter(s.effect) == self.filter)
-            } else {
-                self.active_scene
-            },
+            active_scene: highlighted_scene(&self.settings.scenes, self.filter, self.active_scene),
             paused: self.paused_until.is_some(),
             schedule_text,
             overriding: self.override_k.is_some(),
@@ -2183,5 +2188,22 @@ mod tests {
         assert_eq!(break_due(&s, 40 * MIN, 20 * MIN, 0, None), Due::Start(Break::Eye));
         // Eye breaks alone don't care about the computer clock.
         assert_eq!(break_due(&settings(true, false), 59 * MIN, 39 * MIN, 0, None), Due::Start(Break::Eye));
+    }
+
+    #[test]
+    fn filter_scene_highlight_follows_the_filter() {
+        // Defaults: 0 Daylight, 1 Reading, 2 Evening, 3 Night, 4 Movie, 5 Darkroom.
+        let scenes = model::default_scenes();
+        assert_eq!(highlighted_scene(&scenes, Filter::Darkroom, Some(5)), Some(5));
+        // Darkroom toggled off (clicked again): its chip is no longer lit.
+        assert_eq!(highlighted_scene(&scenes, Filter::None, Some(5)), None);
+        // Plain scenes stay lit until the user changes brightness or warmth.
+        assert_eq!(highlighted_scene(&scenes, Filter::None, Some(3)), Some(3));
+        assert_eq!(highlighted_scene(&scenes, Filter::None, Some(4)), Some(4));
+        // A filter turned on elsewhere lights its scene, whatever was picked before.
+        assert_eq!(highlighted_scene(&scenes, Filter::Darkroom, Some(3)), Some(5));
+        assert_eq!(highlighted_scene(&scenes, Filter::Red, Some(3)), None);
+        // A stale index (scene deleted in settings) lights nothing.
+        assert_eq!(highlighted_scene(&scenes, Filter::None, Some(9)), None);
     }
 }

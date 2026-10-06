@@ -210,7 +210,8 @@ A small borderless panel above the tray, drawn with Direct2D, following the syst
 - **Warmth** slider (Kelvin, labeled with the preset name).
 - **Per-monitor** section (expandable): one brightness slider per monitor with its name
   (e.g. "DELL U2720Q", "Built-in display") and an icon for the method in use (hardware / software).
-- Scene chips (one click to apply).
+- Scene chips (one click to apply). The applied scene's chip is lit until brightness or warmth is changed by hand;
+  a filter scene (Darkroom, Grayscale, Amber, Red) toggles on a second click and is lit only while its filter is on.
 - Buttons: **Pause** (menu: 1 hour / until sunrise / indefinitely), **Settings**.
 - Closes when it loses focus or on Esc.
 

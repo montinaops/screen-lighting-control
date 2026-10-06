@@ -4,6 +4,12 @@ All notable changes to SLC. Versions follow [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-10-06
+
+### Fixed
+- A filter scene (Darkroom, Grayscale, Amber, Red) no longer stays highlighted in the flyout after you turn it off,
+  whether by clicking its chip again, from the tray menu, with `--filter`, panic or reset.
+
 ## [1.5.2] - 2026-10-06
 
 ### Fixed

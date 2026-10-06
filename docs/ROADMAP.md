@@ -39,3 +39,4 @@ Each line is roughly one pull request. Status: ⬜ planned · 🟨 in progress �
 - ✅ Hourly computer-break reminder (configurable interval and 5/10/15-minute length; gentle OSD countdown; wins over
   eye breaks)
 - ✅ 1.5.2: the flyout no longer jumps when "Return to schedule" is clicked
+- ✅ 1.5.3: a filter scene no longer stays highlighted after it is toggled off

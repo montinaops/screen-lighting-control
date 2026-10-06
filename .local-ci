@@ -34,7 +34,6 @@ step "smoke test (Windows Sandbox)"
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 cp "$exe" scripts/smoke.ps1 "$stage/"
-# Stop makes a throw from smoke.ps1 end run.ps1 with exit 1 instead of being reported and
-# passed over, which once let a failed smoke test pass.
-printf '%s\r\n' '$ErrorActionPreference = "Stop"' '& "$PSScriptRoot\smoke.ps1" -Exe "$PSScriptRoot\slc.exe"' >"$stage/run.ps1"
+# win-sandbox runs this with $ErrorActionPreference = 'Stop', so a throw fails the run.
+printf '%s\r\n' '& "$PSScriptRoot\smoke.ps1" -Exe "$PSScriptRoot\slc.exe"' >"$stage/run.ps1"
 win-sandbox "$stage" run.ps1 900
